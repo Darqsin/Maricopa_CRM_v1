@@ -1,11 +1,11 @@
 {
-  "fetched_at": "2026-04-10T18:43:37.652135Z",
+  "fetched_at": "2026-04-10T20:14:17.896342Z",
   "source": "Maricopa County Recorder",
   "date_range": {
     "start": "2026-04-09",
     "end": "2026-04-10"
   },
-  "total": 87,
+  "total": 99,
   "with_address": 0,
   "records": [
     {
@@ -15,8 +15,8 @@
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
-      "owner": "",
-      "grantee": "",
+      "owner": "ZAVALA KARINA",
+      "grantee": "TRUSTEE CORPS",
       "amount": null,
       "legal": "",
       "prop_address": null,
@@ -28,11 +28,11 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
-      "first_name_2": null,
-      "last_name_2": null,
-      "trustee_name": null,
+      "first_name": "Karina",
+      "last_name": "Zavala",
+      "first_name_2": "",
+      "last_name_2": "",
+      "trustee_name": "MTC FINANCIAL INC",
       "trustee_phone": null,
       "auction_date": null,
       "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260209289",
@@ -40,8 +40,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 44
     },
     {
       "doc_num": "20260209595",
@@ -50,8 +49,8 @@
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
-      "owner": "",
-      "grantee": "",
+      "owner": "QUAM KIM",
+      "grantee": "LIVERMORE JAMES A",
       "amount": null,
       "legal": "",
       "prop_address": null,
@@ -63,11 +62,11 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
-      "first_name_2": null,
-      "last_name_2": null,
-      "trustee_name": null,
+      "first_name": "Kim",
+      "last_name": "Quam",
+      "first_name_2": "",
+      "last_name_2": "",
+      "trustee_name": "FREEDOM MORTGAGE CORPORATION",
       "trustee_phone": null,
       "auction_date": null,
       "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260209595",
@@ -75,8 +74,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 44
     },
     {
       "doc_num": "20260210293",
@@ -85,8 +83,8 @@
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
-      "owner": "",
-      "grantee": "",
+      "owner": "WELLS FARGO BANK",
+      "grantee": "UNITED STATES SECRETARY OF HOUSING AND URBAN",
       "amount": null,
       "legal": "",
       "prop_address": null,
@@ -98,11 +96,11 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
-      "first_name_2": null,
-      "last_name_2": null,
-      "trustee_name": null,
+      "first_name": "Fargo Bank",
+      "last_name": "Wells",
+      "first_name_2": "",
+      "last_name_2": "",
+      "trustee_name": "FIRST AMERICAN TITLE INS CO",
       "trustee_phone": null,
       "auction_date": null,
       "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260210293",
@@ -110,8 +108,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 44
     },
     {
       "doc_num": "20260210504",
@@ -120,8 +117,8 @@
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
-      "owner": "",
-      "grantee": "",
+      "owner": "ZBS LAW LLP",
+      "grantee": "PENTAGON FEDERAL CREDIT UNION",
       "amount": null,
       "legal": "",
       "prop_address": null,
@@ -133,11 +130,11 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
-      "first_name_2": null,
-      "last_name_2": null,
-      "trustee_name": null,
+      "first_name": "Law",
+      "last_name": "Zbs",
+      "first_name_2": "",
+      "last_name_2": "",
+      "trustee_name": "ANTILLON REBECCA D",
       "trustee_phone": null,
       "auction_date": null,
       "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260210504",
@@ -145,8 +142,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 44
     },
     {
       "doc_num": "20260210525",
@@ -155,8 +151,8 @@
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
-      "owner": "",
-      "grantee": "",
+      "owner": "TOBOROWSKY CHANOKNAT",
+      "grantee": "LOANCARE LLC",
       "amount": null,
       "legal": "",
       "prop_address": null,
@@ -168,11 +164,11 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
-      "first_name_2": null,
-      "last_name_2": null,
-      "trustee_name": null,
+      "first_name": "Chanoknat",
+      "last_name": "Toborowsky",
+      "first_name_2": "",
+      "last_name_2": "",
+      "trustee_name": "LAKEVIEW LOAN SERVICING LLC",
       "trustee_phone": null,
       "auction_date": null,
       "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260210525",
@@ -180,8 +176,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 44
     },
     {
       "doc_num": "20260210629",
@@ -190,8 +185,8 @@
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
-      "owner": "",
-      "grantee": "",
+      "owner": "STOKES DEBORAH R",
+      "grantee": "PAINTED MOUNTAIN GOLF VILLAS VACATION OWNERSHIP",
       "amount": null,
       "legal": "",
       "prop_address": null,
@@ -203,11 +198,11 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
-      "first_name_2": null,
-      "last_name_2": null,
-      "trustee_name": null,
+      "first_name": "Deborah R",
+      "last_name": "Stokes",
+      "first_name_2": "",
+      "last_name_2": "",
+      "trustee_name": "FRAZIER DELORS",
       "trustee_phone": null,
       "auction_date": null,
       "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260210629",
@@ -215,8 +210,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 44
     },
     {
       "doc_num": "20260210632",
@@ -225,8 +219,8 @@
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
-      "owner": "",
-      "grantee": "",
+      "owner": "LJBF FAMILY LLC",
+      "grantee": "FIRST INTERNATIONAL BANK TRUST",
       "amount": null,
       "legal": "",
       "prop_address": null,
@@ -238,11 +232,11 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
-      "first_name_2": null,
-      "last_name_2": null,
-      "trustee_name": null,
+      "first_name": "Family",
+      "last_name": "Ljbf",
+      "first_name_2": "",
+      "last_name_2": "",
+      "trustee_name": "CLARKSON NAT",
       "trustee_phone": null,
       "auction_date": null,
       "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260210632",
@@ -250,8 +244,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 44
     },
     {
       "doc_num": "20260210634",
@@ -260,8 +253,8 @@
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
-      "owner": "",
-      "grantee": "",
+      "owner": "WHITAKER RUSSELL G",
+      "grantee": "BROOKS JOHN",
       "amount": null,
       "legal": "",
       "prop_address": null,
@@ -273,11 +266,11 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
-      "first_name_2": null,
-      "last_name_2": null,
-      "trustee_name": null,
+      "first_name": "Russell G",
+      "last_name": "Whitaker",
+      "first_name_2": "",
+      "last_name_2": "",
+      "trustee_name": "BROOKS GLORIA",
       "trustee_phone": null,
       "auction_date": null,
       "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260210634",
@@ -285,8 +278,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 44
     },
     {
       "doc_num": "20260210635",
@@ -295,8 +287,8 @@
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
-      "owner": "",
-      "grantee": "",
+      "owner": "ZAKS IGOR",
+      "grantee": "BOYD PATSY O",
       "amount": null,
       "legal": "",
       "prop_address": null,
@@ -308,11 +300,11 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
-      "first_name_2": null,
-      "last_name_2": null,
-      "trustee_name": null,
+      "first_name": "Igor",
+      "last_name": "Zaks",
+      "first_name_2": "",
+      "last_name_2": "",
+      "trustee_name": "BOYD JERRY D",
       "trustee_phone": null,
       "auction_date": null,
       "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260210635",
@@ -320,8 +312,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 44
     },
     {
       "doc_num": "20260210637",
@@ -330,8 +321,8 @@
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
-      "owner": "",
-      "grantee": "",
+      "owner": "SANCHEZ GONZALEZ JAVIER",
+      "grantee": "LEONARD J MCDONALD",
       "amount": null,
       "legal": "",
       "prop_address": null,
@@ -343,11 +334,11 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
-      "first_name_2": null,
-      "last_name_2": null,
-      "trustee_name": null,
+      "first_name": "Gonzalez Javier",
+      "last_name": "Sanchez",
+      "first_name_2": "",
+      "last_name_2": "",
+      "trustee_name": "LAKEVIEW LOAN SERVICING LLC",
       "trustee_phone": null,
       "auction_date": null,
       "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260210637",
@@ -355,8 +346,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 44
     },
     {
       "doc_num": "20260210643",
@@ -365,8 +355,8 @@
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
-      "owner": "",
-      "grantee": "",
+      "owner": "URIAS SHARON A",
+      "grantee": "PAINTED MOUNTAIN GOLF VILLAS VACATION OWNERSHIP",
       "amount": null,
       "legal": "",
       "prop_address": null,
@@ -378,11 +368,11 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
-      "first_name_2": null,
-      "last_name_2": null,
-      "trustee_name": null,
+      "first_name": "Sharon A",
+      "last_name": "Urias",
+      "first_name_2": "",
+      "last_name_2": "",
+      "trustee_name": "GREENSPOON MARDER LLP",
       "trustee_phone": null,
       "auction_date": null,
       "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260210643",
@@ -390,8 +380,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 44
     },
     {
       "doc_num": "20260210673",
@@ -400,8 +389,8 @@
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
-      "owner": "",
-      "grantee": "",
+      "owner": "LJBF FAMILY LLC",
+      "grantee": "FIRST INTERNATIONAL BANK TRUST",
       "amount": null,
       "legal": "",
       "prop_address": null,
@@ -413,11 +402,11 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
-      "first_name_2": null,
-      "last_name_2": null,
-      "trustee_name": null,
+      "first_name": "Family",
+      "last_name": "Ljbf",
+      "first_name_2": "",
+      "last_name_2": "",
+      "trustee_name": "CLARKSON NAT",
       "trustee_phone": null,
       "auction_date": null,
       "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260210673",
@@ -425,8 +414,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 44
     },
     {
       "doc_num": "20260210789",
@@ -448,8 +436,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -460,8 +448,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260210922",
@@ -483,8 +470,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -495,8 +482,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211138",
@@ -518,8 +504,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -530,8 +516,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211140",
@@ -553,8 +538,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -565,8 +550,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211219",
@@ -588,8 +572,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -600,8 +584,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211241",
@@ -623,8 +606,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -635,8 +618,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211309",
@@ -658,8 +640,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -670,8 +652,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211312",
@@ -693,8 +674,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -705,8 +686,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211337",
@@ -728,8 +708,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -740,8 +720,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211347",
@@ -763,8 +742,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -775,8 +754,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211361",
@@ -798,8 +776,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -810,8 +788,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211422",
@@ -833,8 +810,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -845,8 +822,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211423",
@@ -868,8 +844,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -880,8 +856,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211424",
@@ -903,8 +878,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -915,8 +890,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211425",
@@ -938,8 +912,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -950,8 +924,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211426",
@@ -973,8 +946,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -985,8 +958,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211720",
@@ -1008,8 +980,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1020,8 +992,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211848",
@@ -1043,8 +1014,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1055,8 +1026,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211893",
@@ -1078,8 +1048,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1090,8 +1060,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211934",
@@ -1113,8 +1082,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1125,8 +1094,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
     },
     {
       "doc_num": "20260211955",
@@ -1148,8 +1116,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1160,8 +1128,143 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 42,
-      "restricted": false
+      "score": 42
+    },
+    {
+      "doc_num": "20260213276",
+      "doc_type": "N/TR SALE",
+      "filed": "2026-04-10",
+      "cat": "NOTS",
+      "cat_label": "Notice of Trustee Sale",
+      "lead_key": "NS",
+      "owner": "",
+      "grantee": "",
+      "amount": null,
+      "legal": "",
+      "prop_address": null,
+      "prop_city": null,
+      "prop_state": "AZ",
+      "prop_zip": null,
+      "mail_address": null,
+      "mail_city": null,
+      "mail_state": null,
+      "mail_zip": null,
+      "parcel": null,
+      "first_name": null,
+      "last_name": null,
+      "first_name_2": null,
+      "last_name_2": null,
+      "trustee_name": null,
+      "trustee_phone": null,
+      "auction_date": null,
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260213276",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260213276",
+      "flags": [
+        "NO_ADDRESS"
+      ],
+      "score": 42
+    },
+    {
+      "doc_num": "20260213302",
+      "doc_type": "N/TR SALE",
+      "filed": "2026-04-10",
+      "cat": "NOTS",
+      "cat_label": "Notice of Trustee Sale",
+      "lead_key": "NS",
+      "owner": "",
+      "grantee": "",
+      "amount": null,
+      "legal": "",
+      "prop_address": null,
+      "prop_city": null,
+      "prop_state": "AZ",
+      "prop_zip": null,
+      "mail_address": null,
+      "mail_city": null,
+      "mail_state": null,
+      "mail_zip": null,
+      "parcel": null,
+      "first_name": null,
+      "last_name": null,
+      "first_name_2": null,
+      "last_name_2": null,
+      "trustee_name": null,
+      "trustee_phone": null,
+      "auction_date": null,
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260213302",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260213302",
+      "flags": [
+        "NO_ADDRESS"
+      ],
+      "score": 42
+    },
+    {
+      "doc_num": "20260213451",
+      "doc_type": "N/TR SALE",
+      "filed": "2026-04-10",
+      "cat": "NOTS",
+      "cat_label": "Notice of Trustee Sale",
+      "lead_key": "NS",
+      "owner": "",
+      "grantee": "",
+      "amount": null,
+      "legal": "",
+      "prop_address": null,
+      "prop_city": null,
+      "prop_state": "AZ",
+      "prop_zip": null,
+      "mail_address": null,
+      "mail_city": null,
+      "mail_state": null,
+      "mail_zip": null,
+      "parcel": null,
+      "first_name": null,
+      "last_name": null,
+      "first_name_2": null,
+      "last_name_2": null,
+      "trustee_name": null,
+      "trustee_phone": null,
+      "auction_date": null,
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260213451",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260213451",
+      "flags": [
+        "NO_ADDRESS"
+      ],
+      "score": 42
+    },
+    {
+      "doc_num": "20260213720",
+      "doc_type": "N/TR SALE",
+      "filed": "2026-04-10",
+      "cat": "NOTS",
+      "cat_label": "Notice of Trustee Sale",
+      "lead_key": "NS",
+      "owner": "",
+      "grantee": "",
+      "amount": null,
+      "legal": "",
+      "prop_address": null,
+      "prop_city": null,
+      "prop_state": "AZ",
+      "prop_zip": null,
+      "mail_address": null,
+      "mail_city": null,
+      "mail_state": null,
+      "mail_zip": null,
+      "parcel": null,
+      "first_name": null,
+      "last_name": null,
+      "first_name_2": null,
+      "last_name_2": null,
+      "trustee_name": null,
+      "trustee_phone": null,
+      "auction_date": null,
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260213720",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260213720",
+      "flags": [
+        "NO_ADDRESS"
+      ],
+      "score": 42
     },
     {
       "doc_num": "20260211149",
@@ -1185,8 +1288,8 @@
       "parcel": null,
       "first_name": "Ami P",
       "last_name": "Bumia",
-      "first_name_2": "Jamie",
-      "last_name_2": "Bumia",
+      "first_name_2": "",
+      "last_name_2": "",
       "trustee_name": null,
       "trustee_phone": null,
       "auction_date": null,
@@ -1195,8 +1298,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 37,
-      "restricted": false
+      "score": 37
     },
     {
       "doc_num": "20260211324",
@@ -1220,8 +1322,8 @@
       "parcel": null,
       "first_name": "411",
       "last_name": "Anderson",
-      "first_name_2": "Yolanda",
-      "last_name_2": "Martinez",
+      "first_name_2": "",
+      "last_name_2": "",
       "trustee_name": null,
       "trustee_phone": null,
       "auction_date": null,
@@ -1230,8 +1332,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 37,
-      "restricted": false
+      "score": 37
     },
     {
       "doc_num": "20260211534",
@@ -1255,8 +1356,8 @@
       "parcel": null,
       "first_name": "Evan P",
       "last_name": "Grimes",
-      "first_name_2": "Kathleen",
-      "last_name_2": "Grimes",
+      "first_name_2": "",
+      "last_name_2": "",
       "trustee_name": null,
       "trustee_phone": null,
       "auction_date": null,
@@ -1265,8 +1366,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 37,
-      "restricted": false
+      "score": 37
     },
     {
       "doc_num": "20260213064",
@@ -1288,8 +1388,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1300,8 +1400,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213068",
@@ -1323,8 +1422,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1335,8 +1434,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213069",
@@ -1358,8 +1456,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1370,8 +1468,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213070",
@@ -1393,8 +1490,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1405,8 +1502,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213077",
@@ -1428,8 +1524,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1440,8 +1536,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213078",
@@ -1463,8 +1558,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1475,8 +1570,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213079",
@@ -1498,8 +1592,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1510,8 +1604,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213080",
@@ -1533,8 +1626,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1545,8 +1638,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213081",
@@ -1568,8 +1660,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1580,8 +1672,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213082",
@@ -1603,8 +1694,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1615,8 +1706,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213083",
@@ -1638,8 +1728,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1650,8 +1740,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213090",
@@ -1673,8 +1762,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1685,8 +1774,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213091",
@@ -1708,8 +1796,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1720,8 +1808,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213092",
@@ -1743,8 +1830,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1755,8 +1842,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213093",
@@ -1778,8 +1864,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1790,8 +1876,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213094",
@@ -1813,8 +1898,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1825,8 +1910,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213095",
@@ -1848,8 +1932,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1860,8 +1944,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213096",
@@ -1883,8 +1966,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1895,8 +1978,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213097",
@@ -1918,8 +2000,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1930,8 +2012,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260213098",
@@ -1953,8 +2034,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -1965,8 +2046,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 22,
-      "restricted": false
+      "score": 22
     },
     {
       "doc_num": "20260209775",
@@ -1988,8 +2068,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2000,8 +2080,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260209868",
@@ -2023,8 +2102,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2035,8 +2114,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260209888",
@@ -2058,8 +2136,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2070,8 +2148,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260210615",
@@ -2093,8 +2170,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2105,8 +2182,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260210667",
@@ -2128,8 +2204,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2140,8 +2216,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260210800",
@@ -2163,8 +2238,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2175,8 +2250,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260210802",
@@ -2198,8 +2272,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2210,8 +2284,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260211684",
@@ -2233,8 +2306,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2245,8 +2318,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260213163",
@@ -2268,8 +2340,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2280,8 +2352,41 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
+    },
+    {
+      "doc_num": "20260213262",
+      "doc_type": "PROB DEED",
+      "filed": "2026-04-10",
+      "cat": "PRO",
+      "cat_label": "Probate Document",
+      "lead_key": "PD",
+      "owner": "",
+      "grantee": "",
+      "amount": null,
+      "legal": "",
+      "prop_address": null,
+      "prop_city": null,
+      "prop_state": "AZ",
+      "prop_zip": null,
+      "mail_address": null,
+      "mail_city": null,
+      "mail_state": null,
+      "mail_zip": null,
+      "parcel": null,
+      "first_name": null,
+      "last_name": null,
+      "first_name_2": null,
+      "last_name_2": null,
+      "trustee_name": null,
+      "trustee_phone": null,
+      "auction_date": null,
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260213262",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260213262",
+      "flags": [
+        "NO_ADDRESS"
+      ],
+      "score": 17
     },
     {
       "doc_num": "20260209116",
@@ -2303,8 +2408,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2315,8 +2420,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260209565",
@@ -2338,8 +2442,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2350,8 +2454,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260209857",
@@ -2373,8 +2476,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2385,8 +2488,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260209871",
@@ -2408,8 +2510,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2420,8 +2522,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260209897",
@@ -2443,8 +2544,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2455,8 +2556,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260209911",
@@ -2478,8 +2578,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2490,8 +2590,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260209915",
@@ -2513,8 +2612,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2525,8 +2624,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260209960",
@@ -2548,8 +2646,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2560,8 +2658,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260210049",
@@ -2583,8 +2680,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2595,8 +2692,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260210671",
@@ -2618,8 +2714,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2630,8 +2726,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260210691",
@@ -2653,8 +2748,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2665,8 +2760,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260210692",
@@ -2688,8 +2782,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2700,8 +2794,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260210799",
@@ -2723,8 +2816,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2735,8 +2828,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260210801",
@@ -2758,8 +2850,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2770,8 +2862,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260211231",
@@ -2793,8 +2884,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2805,8 +2896,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260211404",
@@ -2828,8 +2918,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2840,8 +2930,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260211409",
@@ -2863,8 +2952,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2875,8 +2964,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260211493",
@@ -2898,8 +2986,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2910,8 +2998,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260212070",
@@ -2933,8 +3020,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2945,8 +3032,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260212513",
@@ -2968,8 +3054,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -2980,8 +3066,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260212930",
@@ -3003,8 +3088,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -3015,8 +3100,7 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
     },
     {
       "doc_num": "20260213191",
@@ -3038,8 +3122,8 @@
       "mail_state": null,
       "mail_zip": null,
       "parcel": null,
-      "first_name": "",
-      "last_name": "",
+      "first_name": null,
+      "last_name": null,
       "first_name_2": null,
       "last_name_2": null,
       "trustee_name": null,
@@ -3050,8 +3134,245 @@
       "flags": [
         "NO_ADDRESS"
       ],
-      "score": 17,
-      "restricted": false
+      "score": 17
+    },
+    {
+      "doc_num": "20260213417",
+      "doc_type": "PROB JUDG",
+      "filed": "2026-04-10",
+      "cat": "PRO",
+      "cat_label": "Probate Document",
+      "lead_key": "PJ",
+      "owner": "",
+      "grantee": "",
+      "amount": null,
+      "legal": "",
+      "prop_address": null,
+      "prop_city": null,
+      "prop_state": "AZ",
+      "prop_zip": null,
+      "mail_address": null,
+      "mail_city": null,
+      "mail_state": null,
+      "mail_zip": null,
+      "parcel": null,
+      "first_name": null,
+      "last_name": null,
+      "first_name_2": null,
+      "last_name_2": null,
+      "trustee_name": null,
+      "trustee_phone": null,
+      "auction_date": null,
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260213417",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260213417",
+      "flags": [
+        "NO_ADDRESS"
+      ],
+      "score": 17
+    },
+    {
+      "doc_num": "20260213422",
+      "doc_type": "PROB JUDG",
+      "filed": "2026-04-10",
+      "cat": "PRO",
+      "cat_label": "Probate Document",
+      "lead_key": "PJ",
+      "owner": "",
+      "grantee": "",
+      "amount": null,
+      "legal": "",
+      "prop_address": null,
+      "prop_city": null,
+      "prop_state": "AZ",
+      "prop_zip": null,
+      "mail_address": null,
+      "mail_city": null,
+      "mail_state": null,
+      "mail_zip": null,
+      "parcel": null,
+      "first_name": null,
+      "last_name": null,
+      "first_name_2": null,
+      "last_name_2": null,
+      "trustee_name": null,
+      "trustee_phone": null,
+      "auction_date": null,
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260213422",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260213422",
+      "flags": [
+        "NO_ADDRESS"
+      ],
+      "score": 17
+    },
+    {
+      "doc_num": "20260213475",
+      "doc_type": "PROB JUDG",
+      "filed": "2026-04-10",
+      "cat": "PRO",
+      "cat_label": "Probate Document",
+      "lead_key": "PJ",
+      "owner": "",
+      "grantee": "",
+      "amount": null,
+      "legal": "",
+      "prop_address": null,
+      "prop_city": null,
+      "prop_state": "AZ",
+      "prop_zip": null,
+      "mail_address": null,
+      "mail_city": null,
+      "mail_state": null,
+      "mail_zip": null,
+      "parcel": null,
+      "first_name": null,
+      "last_name": null,
+      "first_name_2": null,
+      "last_name_2": null,
+      "trustee_name": null,
+      "trustee_phone": null,
+      "auction_date": null,
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260213475",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260213475",
+      "flags": [
+        "NO_ADDRESS"
+      ],
+      "score": 17
+    },
+    {
+      "doc_num": "20260213616",
+      "doc_type": "PROB JUDG",
+      "filed": "2026-04-10",
+      "cat": "PRO",
+      "cat_label": "Probate Document",
+      "lead_key": "PJ",
+      "owner": "",
+      "grantee": "",
+      "amount": null,
+      "legal": "",
+      "prop_address": null,
+      "prop_city": null,
+      "prop_state": "AZ",
+      "prop_zip": null,
+      "mail_address": null,
+      "mail_city": null,
+      "mail_state": null,
+      "mail_zip": null,
+      "parcel": null,
+      "first_name": null,
+      "last_name": null,
+      "first_name_2": null,
+      "last_name_2": null,
+      "trustee_name": null,
+      "trustee_phone": null,
+      "auction_date": null,
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260213616",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260213616",
+      "flags": [
+        "NO_ADDRESS"
+      ],
+      "score": 17
+    },
+    {
+      "doc_num": "20260213617",
+      "doc_type": "PROB JUDG",
+      "filed": "2026-04-10",
+      "cat": "PRO",
+      "cat_label": "Probate Document",
+      "lead_key": "PJ",
+      "owner": "",
+      "grantee": "",
+      "amount": null,
+      "legal": "",
+      "prop_address": null,
+      "prop_city": null,
+      "prop_state": "AZ",
+      "prop_zip": null,
+      "mail_address": null,
+      "mail_city": null,
+      "mail_state": null,
+      "mail_zip": null,
+      "parcel": null,
+      "first_name": null,
+      "last_name": null,
+      "first_name_2": null,
+      "last_name_2": null,
+      "trustee_name": null,
+      "trustee_phone": null,
+      "auction_date": null,
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260213617",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260213617",
+      "flags": [
+        "NO_ADDRESS"
+      ],
+      "score": 17
+    },
+    {
+      "doc_num": "20260213618",
+      "doc_type": "PROB JUDG",
+      "filed": "2026-04-10",
+      "cat": "PRO",
+      "cat_label": "Probate Document",
+      "lead_key": "PJ",
+      "owner": "",
+      "grantee": "",
+      "amount": null,
+      "legal": "",
+      "prop_address": null,
+      "prop_city": null,
+      "prop_state": "AZ",
+      "prop_zip": null,
+      "mail_address": null,
+      "mail_city": null,
+      "mail_state": null,
+      "mail_zip": null,
+      "parcel": null,
+      "first_name": null,
+      "last_name": null,
+      "first_name_2": null,
+      "last_name_2": null,
+      "trustee_name": null,
+      "trustee_phone": null,
+      "auction_date": null,
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260213618",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260213618",
+      "flags": [
+        "NO_ADDRESS"
+      ],
+      "score": 17
+    },
+    {
+      "doc_num": "20260213645",
+      "doc_type": "PROB JUDG",
+      "filed": "2026-04-10",
+      "cat": "PRO",
+      "cat_label": "Probate Document",
+      "lead_key": "PJ",
+      "owner": "",
+      "grantee": "",
+      "amount": null,
+      "legal": "",
+      "prop_address": null,
+      "prop_city": null,
+      "prop_state": "AZ",
+      "prop_zip": null,
+      "mail_address": null,
+      "mail_city": null,
+      "mail_state": null,
+      "mail_zip": null,
+      "parcel": null,
+      "first_name": null,
+      "last_name": null,
+      "first_name_2": null,
+      "last_name_2": null,
+      "trustee_name": null,
+      "trustee_phone": null,
+      "auction_date": null,
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260213645",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260213645",
+      "flags": [
+        "NO_ADDRESS"
+      ],
+      "score": 17
     }
   ]
 }

@@ -234,3 +234,135 @@ Call log:
 2026-04-10 18:43:37,657 [INFO] exporter — GHL CSV → data/ghl_export.csv (87 rows)
 2026-04-10 18:43:37,657 [INFO] fetch — GHL CSV → data/ghl_export.csv
 2026-04-10 18:43:37,657 [INFO] fetch — Run complete | total=87 | with_addr=0 | top_score=42
+2026-04-10 20:11:00,061 [INFO] fetch — Run started | lookback=1d | 2026-04-09 → 2026-04-10
+2026-04-10 20:11:00,174 [INFO] clerk_scraper — Session warmed up via portal
+2026-04-10 20:11:00,175 [INFO] clerk_scraper — Scraping NS (Notice of Trustee Sale)
+2026-04-10 20:11:00,600 [INFO] clerk_scraper —   Page 1: 37 rows (total=37)
+2026-04-10 20:11:00,622 [INFO] clerk_scraper —   → 37 records for NS
+2026-04-10 20:11:01,122 [INFO] clerk_scraper — Scraping FL (Federal Tax Lien)
+2026-04-10 20:11:01,277 [INFO] clerk_scraper —   Page 1: 0 rows (total=0)
+2026-04-10 20:11:01,277 [INFO] clerk_scraper —   → 0 records for FL
+2026-04-10 20:11:01,777 [INFO] clerk_scraper — Scraping SL (State Tax Lien)
+2026-04-10 20:11:01,934 [INFO] clerk_scraper —   Page 1: 20 rows (total=20)
+2026-04-10 20:11:01,934 [INFO] clerk_scraper —   → 20 records for SL
+2026-04-10 20:11:02,435 [INFO] clerk_scraper — Scraping DE (Tax Deed)
+2026-04-10 20:11:02,602 [INFO] clerk_scraper —   Page 1: 3 rows (total=3)
+2026-04-10 20:11:02,603 [INFO] clerk_scraper —   → 3 records for DE
+2026-04-10 20:11:03,103 [INFO] clerk_scraper — Scraping PD (Probate Document)
+2026-04-10 20:11:03,257 [INFO] clerk_scraper —   Page 1: 10 rows (total=10)
+2026-04-10 20:11:03,257 [INFO] clerk_scraper —   → 10 records for PD
+2026-04-10 20:11:03,757 [INFO] clerk_scraper — Scraping PJ (Probate Document)
+2026-04-10 20:11:03,922 [INFO] clerk_scraper —   Page 1: 29 rows (total=29)
+2026-04-10 20:11:03,923 [INFO] clerk_scraper —   → 29 records for PJ
+2026-04-10 20:11:04,423 [INFO] clerk_scraper — Total records: 99
+2026-04-10 20:11:04,423 [INFO] fetch — Clerk scrape complete — 99 raw records
+2026-04-10 20:11:04,423 [INFO] enricher — Enriching 99 records via PNG OCR...
+2026-04-10 20:11:04,437 [INFO] enricher — OCR engine ready (pytesseract)
+2026-04-10 20:11:10,030 [WARNING] enricher —   [1/99] Error 20260209289: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:12,020 [WARNING] enricher —   [2/99] Error 20260209595: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:14,012 [WARNING] enricher —   [3/99] Error 20260210293: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:15,995 [WARNING] enricher —   [4/99] Error 20260210504: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:17,894 [WARNING] enricher —   [5/99] Error 20260210525: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:19,963 [WARNING] enricher —   [6/99] Error 20260210629: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:21,803 [WARNING] enricher —   [7/99] Error 20260210632: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:23,741 [WARNING] enricher —   [8/99] Error 20260210634: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:25,751 [WARNING] enricher —   [9/99] Error 20260210635: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:27,674 [WARNING] enricher —   [10/99] Error 20260210637: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:29,633 [WARNING] enricher —   [11/99] Error 20260210643: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:31,458 [WARNING] enricher —   [12/99] Error 20260210673: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:33,430 [WARNING] enricher —   [13/99] Error 20260210789: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:35,390 [WARNING] enricher —   [14/99] Error 20260210922: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:37,514 [WARNING] enricher —   [15/99] Error 20260211138: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:39,606 [WARNING] enricher —   [16/99] Error 20260211140: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:41,559 [WARNING] enricher —   [17/99] Error 20260211219: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:43,658 [WARNING] enricher —   [18/99] Error 20260211241: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:45,944 [WARNING] enricher —   [19/99] Error 20260211309: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:48,101 [WARNING] enricher —   [20/99] Error 20260211312: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:50,299 [WARNING] enricher —   [21/99] Error 20260211337: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:52,198 [WARNING] enricher —   [22/99] Error 20260211347: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:54,337 [WARNING] enricher —   [23/99] Error 20260211361: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:56,463 [WARNING] enricher —   [24/99] Error 20260211422: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:11:58,358 [WARNING] enricher —   [25/99] Error 20260211423: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:00,338 [WARNING] enricher —   [26/99] Error 20260211424: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:02,369 [WARNING] enricher —   [27/99] Error 20260211425: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:04,454 [WARNING] enricher —   [28/99] Error 20260211426: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:06,548 [WARNING] enricher —   [29/99] Error 20260211720: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:08,575 [WARNING] enricher —   [30/99] Error 20260211848: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:10,465 [WARNING] enricher —   [31/99] Error 20260211893: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:12,356 [WARNING] enricher —   [32/99] Error 20260211934: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:14,492 [WARNING] enricher —   [33/99] Error 20260211955: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:16,468 [WARNING] enricher —   [34/99] Error 20260213276: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:18,544 [WARNING] enricher —   [35/99] Error 20260213302: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:20,640 [WARNING] enricher —   [36/99] Error 20260213451: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:22,707 [WARNING] enricher —   [37/99] Error 20260213720: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:24,750 [WARNING] enricher —   [38/99] Error 20260213064: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:26,731 [WARNING] enricher —   [39/99] Error 20260213068: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:28,741 [WARNING] enricher —   [40/99] Error 20260213069: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:30,672 [WARNING] enricher —   [41/99] Error 20260213070: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:32,728 [WARNING] enricher —   [42/99] Error 20260213077: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:34,800 [WARNING] enricher —   [43/99] Error 20260213078: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:36,827 [WARNING] enricher —   [44/99] Error 20260213079: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:38,822 [WARNING] enricher —   [45/99] Error 20260213080: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:40,740 [WARNING] enricher —   [46/99] Error 20260213081: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:42,611 [WARNING] enricher —   [47/99] Error 20260213082: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:44,612 [WARNING] enricher —   [48/99] Error 20260213083: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:46,597 [WARNING] enricher —   [49/99] Error 20260213090: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:48,569 [WARNING] enricher —   [50/99] Error 20260213091: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:50,370 [WARNING] enricher —   [51/99] Error 20260213092: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:52,443 [WARNING] enricher —   [52/99] Error 20260213093: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:54,608 [WARNING] enricher —   [53/99] Error 20260213094: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:56,483 [WARNING] enricher —   [54/99] Error 20260213095: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:12:58,482 [WARNING] enricher —   [55/99] Error 20260213096: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:00,602 [WARNING] enricher —   [56/99] Error 20260213097: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:02,576 [WARNING] enricher —   [57/99] Error 20260213098: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:04,275 [WARNING] enricher —   [58/99] Error 20260211149: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:06,439 [WARNING] enricher —   [59/99] Error 20260211324: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:08,442 [WARNING] enricher —   [60/99] Error 20260211534: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:10,234 [WARNING] enricher —   [61/99] Error 20260209775: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:12,255 [WARNING] enricher —   [62/99] Error 20260209868: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:14,311 [WARNING] enricher —   [63/99] Error 20260209888: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:15,966 [WARNING] enricher —   [64/99] Error 20260210615: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:17,850 [WARNING] enricher —   [65/99] Error 20260210667: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:19,550 [WARNING] enricher —   [66/99] Error 20260210800: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:21,243 [WARNING] enricher —   [67/99] Error 20260210802: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:23,465 [WARNING] enricher —   [68/99] Error 20260211684: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:25,292 [WARNING] enricher —   [69/99] Error 20260213163: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:27,023 [WARNING] enricher —   [70/99] Error 20260213262: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:28,745 [WARNING] enricher —   [71/99] Error 20260209116: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:30,492 [WARNING] enricher —   [72/99] Error 20260209565: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:32,284 [WARNING] enricher —   [73/99] Error 20260209857: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:34,157 [WARNING] enricher —   [74/99] Error 20260209871: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:35,859 [WARNING] enricher —   [75/99] Error 20260209897: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:37,610 [WARNING] enricher —   [76/99] Error 20260209911: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:39,260 [WARNING] enricher —   [77/99] Error 20260209915: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:41,071 [WARNING] enricher —   [78/99] Error 20260209960: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:42,929 [WARNING] enricher —   [79/99] Error 20260210049: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:44,707 [WARNING] enricher —   [80/99] Error 20260210671: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:46,468 [WARNING] enricher —   [81/99] Error 20260210691: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:48,134 [WARNING] enricher —   [82/99] Error 20260210692: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:49,956 [WARNING] enricher —   [83/99] Error 20260210799: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:51,844 [WARNING] enricher —   [84/99] Error 20260210801: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:53,608 [WARNING] enricher —   [85/99] Error 20260211231: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:55,370 [WARNING] enricher —   [86/99] Error 20260211404: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:57,094 [WARNING] enricher —   [87/99] Error 20260211409: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:13:58,855 [WARNING] enricher —   [88/99] Error 20260211493: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:14:00,599 [WARNING] enricher —   [89/99] Error 20260212070: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:14:02,203 [WARNING] enricher —   [90/99] Error 20260212513: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:14:03,956 [WARNING] enricher —   [91/99] Error 20260212930: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:14:05,755 [WARNING] enricher —   [92/99] Error 20260213191: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:14:07,462 [WARNING] enricher —   [93/99] Error 20260213417: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:14:09,216 [WARNING] enricher —   [94/99] Error 20260213422: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:14:10,881 [WARNING] enricher —   [95/99] Error 20260213475: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:14:12,531 [WARNING] enricher —   [96/99] Error 20260213616: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:14:14,175 [WARNING] enricher —   [97/99] Error 20260213617: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:14:15,853 [WARNING] enricher —   [98/99] Error 20260213618: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:14:17,562 [WARNING] enricher —   [99/99] Error 20260213645: tesseract is not installed or it's not in your PATH. See README file for more information.
+2026-04-10 20:14:17,896 [INFO] enricher — Enrichment done: 0/99 addresses (0%)
+2026-04-10 20:14:17,896 [INFO] fetch — Enrichment complete — 99 records
+2026-04-10 20:14:17,899 [INFO] exporter — JSON saved → dashboard/records.json (99 records)
+2026-04-10 20:14:17,899 [INFO] fetch — Saved → dashboard/records.json
+2026-04-10 20:14:17,901 [INFO] exporter — JSON saved → data/records.json (99 records)
+2026-04-10 20:14:17,901 [INFO] fetch — Saved → data/records.json
+2026-04-10 20:14:17,902 [INFO] exporter — GHL CSV → data/ghl_export.csv (99 rows)
+2026-04-10 20:14:17,902 [INFO] fetch — GHL CSV → data/ghl_export.csv
+2026-04-10 20:14:17,902 [INFO] fetch — Run complete | total=99 | with_addr=0 | top_score=44
