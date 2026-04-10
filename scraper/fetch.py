@@ -80,7 +80,7 @@ async def main():
     log.info(f"Clerk scrape complete — {len(raw_records)} raw records")
 
     # ── 2. enrich (mail address, parcel, auction date, pdf url) ───────────
-    enriched = enrich_records(raw_records)
+    enriched = await enrich_records(raw_records)
     log.info(f"Enrichment complete — {len(enriched)} records")
 
     # ── 3. score each record ───────────────────────────────────────────────
