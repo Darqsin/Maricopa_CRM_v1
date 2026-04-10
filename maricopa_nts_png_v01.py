@@ -1,143 +1,121 @@
 """
 maricopa_nts_png_v01.py
-Processes raw PNG images from Maricopa County NTS (Notice of Trustee Sale).
-Groups multi-page notices by document number, outputs individual PDFs.
-
-Pipeline:
-  raw_png/ → OCR → grouped_output/renamed/ → grouped_output/pdfs/
-
-Dependencies:
-  pip install pillow pytesseract img2pdf
-  apt-get install tesseract-ocr (or brew install tesseract)
+Groups downloaded PNGs into one PDF per document number.
+Input:  raw_png/{DOC_NUM}_p{PAGE}.png  (from scraper/download_pngs.py)
+Output: grouped_output/pdfs/{DOC_NUM}.pdf
 """
 
 import logging
 import re
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 log = logging.getLogger("nts_png")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-# ── config ─────────────────────────────────────────────────────────────────────
-RAW_PNG_DIR     = Path("raw_png")
-RENAMED_DIR     = Path("grouped_output/renamed")
-PDF_OUTPUT_DIR  = Path("grouped_output/pdfs")
-DPI             = 300
-UNKNOWN_PREFIX  = "UNKNOWN"
+RAW_PNG_DIR    = Path("raw_png")
+RENAMED_DIR    = Path("grouped_output/renamed")
+PDF_OUTPUT_DIR = Path("grouped_output/pdfs")
 
 
 def run():
     try:
-        import pytesseract
+        import img2pdf
         from PIL import Image
     except ImportError:
-        log.error("Missing deps: pip install pillow pytesseract img2pdf")
+        log.error("Missing deps: pip install img2pdf pillow")
         sys.exit(1)
 
     RAW_PNG_DIR.mkdir(exist_ok=True)
     RENAMED_DIR.mkdir(parents=True, exist_ok=True)
     PDF_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Find all PNGs — support both naming conventions:
+    #   {DOC_NUM}_p{PAGE}.png   (from download_pngs.py)
+    #   image (N).png           (manually downloaded)
     pngs = sorted(RAW_PNG_DIR.glob("*.png")) + sorted(RAW_PNG_DIR.glob("*.PNG"))
-    log.info(f"Found {len(pngs)} PNG files in {RAW_PNG_DIR}")
+    log.info(f"Found {len(pngs)} PNG files in {RAW_PNG_DIR}/")
 
     if not pngs:
-        log.warning("No PNGs found — place images in raw_png/ and re-run")
+        log.warning("No PNGs found — nothing to process")
         return
 
-    # ── OCR each image → extract doc number ───────────────────────────────
-    grouped: dict[str, list[Path]] = {}
+    # Group by document number
+    grouped: dict[str, list[tuple[int, Path]]] = defaultdict(list)
 
-    for i, png_path in enumerate(pngs):
-        log.info(f"[{i+1}/{len(pngs)}] OCR: {png_path.name}")
-        try:
-            img  = _load_and_clean(png_path)
-            text = pytesseract.image_to_string(img, config="--psm 6")
-            doc_num = _extract_doc_number(text)
-        except Exception as exc:
-            log.warning(f"  OCR failed: {exc}")
-            doc_num = None
+    for png_path in pngs:
+        name = png_path.stem
 
-        label = doc_num if doc_num else f"{UNKNOWN_PREFIX}_{i+1:04d}"
+        # Pattern 1: {DOC_NUM}_p{PAGE}  e.g. 20260205851_p1
+        m = re.match(r"^(\d{10,13})_p(\d+)$", name)
+        if m:
+            doc_num  = m.group(1)
+            page_num = int(m.group(2))
+            grouped[doc_num].append((page_num, png_path))
+            continue
 
-        # Rename/copy to renamed dir
-        renamed_path = RENAMED_DIR / f"{label}_p{i+1:03d}.png"
-        try:
-            img_pil = _load_and_clean(png_path)
-            img_pil.save(renamed_path, dpi=(DPI, DPI))
-        except Exception as exc:
-            log.warning(f"  Save renamed failed: {exc} — using raw copy")
-            import shutil
-            shutil.copy2(png_path, renamed_path)
+        # Pattern 2: manually named "image (N)" — OCR to find doc number
+        m2 = re.match(r"^image[\s_\(]+(\d+)[\)\s]*$", name, re.I)
+        if m2:
+            doc_num = _ocr_doc_number(png_path)
+            if not doc_num:
+                doc_num = f"UNKNOWN_{m2.group(1):04d}"
+            grouped[doc_num].append((int(m2.group(1)), png_path))
+            continue
 
-        grouped.setdefault(label, []).append(renamed_path)
+        # Fallback: use filename as doc number
+        grouped[name].append((1, png_path))
 
     log.info(f"Grouped into {len(grouped)} document(s)")
 
-    # ── combine pages per doc number → PDF ────────────────────────────────
-    try:
-        import img2pdf
-    except ImportError:
-        log.error("img2pdf not installed — pip install img2pdf")
-        _fallback_pdf(grouped)
-        return
-
+    # Build one PDF per document
+    success = 0
     for doc_num, pages in grouped.items():
         pdf_path = PDF_OUTPUT_DIR / f"{doc_num}.pdf"
+        if pdf_path.exists():
+            log.debug(f"  {doc_num}.pdf already exists — skipping")
+            success += 1
+            continue
+
+        # Sort pages by page number
+        pages.sort(key=lambda x: x[0])
+        page_paths = [p for _, p in pages]
+
         try:
-            page_bytes = [open(p, "rb").read() for p in sorted(pages)]
+            page_bytes = [p.read_bytes() for p in page_paths]
             with open(pdf_path, "wb") as f:
                 f.write(img2pdf.convert(page_bytes))
-            log.info(f"  → {pdf_path} ({len(pages)} page(s))")
+            log.info(f"  ✓ {pdf_path.name} ({len(pages)} page(s))")
+            success += 1
         except Exception as exc:
-            log.error(f"  PDF creation failed for {doc_num}: {exc}")
+            log.error(f"  ✗ PDF failed for {doc_num}: {exc}")
+            # Fallback: save as multi-page TIFF
+            try:
+                imgs = [Image.open(p).convert("RGB") for p in page_paths]
+                tif_path = PDF_OUTPUT_DIR / f"{doc_num}.tif"
+                imgs[0].save(tif_path, save_all=True, append_images=imgs[1:])
+                log.info(f"  ✓ Saved as TIFF fallback: {tif_path.name}")
+                success += 1
+            except Exception as exc2:
+                log.error(f"  ✗ TIFF fallback also failed: {exc2}")
 
-    log.info("PNG processing complete.")
-    log.info(f"PDFs → {PDF_OUTPUT_DIR}")
-
-
-def _load_and_clean(png_path: Path):
-    """Load PNG, convert to grayscale, apply basic cleanup."""
-    from PIL import Image, ImageFilter, ImageEnhance
-    img = Image.open(png_path).convert("L")
-
-    # Sharpen + contrast
-    img = ImageEnhance.Contrast(img).enhance(2.0)
-    img = img.filter(ImageFilter.SHARPEN)
-    return img
+    log.info(f"Complete: {success}/{len(grouped)} PDFs created in {PDF_OUTPUT_DIR}/")
 
 
-def _extract_doc_number(text: str) -> str | None:
-    """
-    Maricopa doc numbers look like: 2026XXXXXXXXX (13 digits starting with year)
-    or older 9-digit format.
-    """
-    patterns = [
-        r"\b(20\d{2}\d{7,9})\b",          # 2024XXXXXXX
-        r"[Dd]oc(?:ument)?\s*#?\s*:?\s*([\d]{7,13})",
-        r"[Rr]ecording\s+[Nn]o\.?\s*:?\s*([\d]{7,13})",
-        r"[Ii]nstrument\s+[Nn]o\.?\s*:?\s*([\d]{7,13})",
-    ]
-    for pat in patterns:
-        m = re.search(pat, text)
+def _ocr_doc_number(png_path: Path) -> str | None:
+    """OCR a PNG to extract the Maricopa document recording number."""
+    try:
+        import pytesseract
+        from PIL import Image
+        img  = Image.open(png_path).convert("L")
+        text = pytesseract.image_to_string(img, config="--psm 6")
+        m = re.search(r"\b(20\d{2}\d{7,9})\b", text)
         if m:
-            return m.group(1).strip()
+            return m.group(1)
+    except Exception:
+        pass
     return None
-
-
-def _fallback_pdf(grouped: dict):
-    """Use Pillow to save images as multi-page TIFF if img2pdf unavailable."""
-    from PIL import Image
-    for doc_num, pages in grouped.items():
-        pdf_path = PDF_OUTPUT_DIR / f"{doc_num}.tif"
-        try:
-            imgs = [Image.open(p).convert("RGB") for p in sorted(pages)]
-            if imgs:
-                imgs[0].save(pdf_path, save_all=True, append_images=imgs[1:])
-                log.info(f"  → {pdf_path} (TIFF fallback, {len(imgs)} pages)")
-        except Exception as exc:
-            log.error(f"  TIFF fallback failed for {doc_num}: {exc}")
 
 
 if __name__ == "__main__":
