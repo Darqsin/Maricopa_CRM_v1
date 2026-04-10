@@ -204,3 +204,33 @@ Call log:
 2026-04-10 16:28:15,764 [INFO] exporter — GHL CSV → data/ghl_export.csv (0 rows)
 2026-04-10 16:28:15,764 [INFO] fetch — GHL CSV → data/ghl_export.csv
 2026-04-10 16:28:15,765 [INFO] fetch — Run complete | total=0 | with_addr=0 | top_score=0
+2026-04-10 18:24:47,476 [INFO] fetch — Run started | lookback=1d | 2026-04-09 → 2026-04-10
+2026-04-10 18:24:47,694 [INFO] clerk_scraper — Session warmed up via portal
+2026-04-10 18:24:47,695 [INFO] clerk_scraper — Scraping NS (Notice of Trustee Sale)
+2026-04-10 18:24:48,064 [INFO] clerk_scraper —   Page 1: 33 rows (total=33)
+2026-04-10 18:24:48,080 [INFO] clerk_scraper —   → 33 records for NS
+2026-04-10 18:24:48,580 [INFO] clerk_scraper — Scraping FL (Federal Tax Lien)
+2026-04-10 18:24:48,691 [INFO] clerk_scraper —   Page 1: 0 rows (total=0)
+2026-04-10 18:24:48,691 [INFO] clerk_scraper —   → 0 records for FL
+2026-04-10 18:24:49,191 [INFO] clerk_scraper — Scraping SL (State Tax Lien)
+2026-04-10 18:24:49,347 [INFO] clerk_scraper —   Page 1: 20 rows (total=20)
+2026-04-10 18:24:49,348 [INFO] clerk_scraper —   → 20 records for SL
+2026-04-10 18:24:49,848 [INFO] clerk_scraper — Scraping DE (Tax Deed)
+2026-04-10 18:24:49,956 [INFO] clerk_scraper —   Page 1: 3 rows (total=3)
+2026-04-10 18:24:49,957 [INFO] clerk_scraper —   → 3 records for DE
+2026-04-10 18:24:50,457 [INFO] clerk_scraper — Scraping PD (Probate Document)
+2026-04-10 18:24:50,599 [INFO] clerk_scraper —   Page 1: 9 rows (total=9)
+2026-04-10 18:24:50,599 [INFO] clerk_scraper —   → 9 records for PD
+2026-04-10 18:24:51,099 [INFO] clerk_scraper — Scraping PJ (Probate Document)
+2026-04-10 18:24:51,250 [INFO] clerk_scraper —   Page 1: 22 rows (total=22)
+2026-04-10 18:24:51,250 [INFO] clerk_scraper —   → 22 records for PJ
+2026-04-10 18:24:51,750 [INFO] clerk_scraper — Total records: 87
+2026-04-10 18:24:51,751 [INFO] fetch — Clerk scrape complete — 87 raw records
+2026-04-10 18:43:37,651 [INFO] fetch — Enrichment complete — 87 records
+2026-04-10 18:43:37,654 [INFO] exporter — JSON saved → dashboard/records.json (87 records)
+2026-04-10 18:43:37,654 [INFO] fetch — Saved → dashboard/records.json
+2026-04-10 18:43:37,656 [INFO] exporter — JSON saved → data/records.json (87 records)
+2026-04-10 18:43:37,657 [INFO] fetch — Saved → data/records.json
+2026-04-10 18:43:37,657 [INFO] exporter — GHL CSV → data/ghl_export.csv (87 rows)
+2026-04-10 18:43:37,657 [INFO] fetch — GHL CSV → data/ghl_export.csv
+2026-04-10 18:43:37,657 [INFO] fetch — Run complete | total=87 | with_addr=0 | top_score=42
