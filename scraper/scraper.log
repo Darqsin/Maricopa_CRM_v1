@@ -1,0 +1,106 @@
+2026-04-10 15:40:17,911 [INFO] fetch — Run started | lookback=1d | 2026-04-09 → 2026-04-10
+2026-04-10 15:40:19,677 [INFO] clerk_scraper — Scraping NS (Notice of Trustee Sale) …
+2026-04-10 15:40:21,368 [WARNING] clerk_scraper — Could not locate date fields — using default range
+2026-04-10 15:40:22,961 [WARNING] clerk_scraper —   No result rows found on page
+2026-04-10 15:40:22,994 [INFO] clerk_scraper —   → 0 records for NS
+2026-04-10 15:40:22,994 [INFO] clerk_scraper — Scraping FL (Federal Tax Lien) …
+2026-04-10 15:40:24,095 [WARNING] clerk_scraper — Could not locate date fields — using default range
+2026-04-10 15:40:44,133 [WARNING] clerk_scraper —   Attempt 1/3 failed for FL: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("table.resultsTable, #searchResults, .no-results, #tblResults") to be visible
+
+2026-04-10 15:40:48,200 [WARNING] clerk_scraper — Could not locate date fields — using default range
+2026-04-10 15:41:08,233 [WARNING] clerk_scraper —   Attempt 2/3 failed for FL: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("table.resultsTable, #searchResults, .no-results, #tblResults") to be visible
+
+2026-04-10 15:41:15,297 [WARNING] clerk_scraper — Could not locate date fields — using default range
+2026-04-10 15:41:35,345 [WARNING] clerk_scraper —   Attempt 3/3 failed for FL: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("table.resultsTable, #searchResults, .no-results, #tblResults") to be visible
+
+2026-04-10 15:41:35,345 [ERROR] clerk_scraper —   All retries exhausted for FL
+2026-04-10 15:41:35,345 [INFO] clerk_scraper —   → 0 records for FL
+2026-04-10 15:41:35,345 [INFO] clerk_scraper — Scraping SL (State Tax Lien) …
+2026-04-10 15:41:36,393 [WARNING] clerk_scraper — Could not locate date fields — using default range
+2026-04-10 15:41:56,435 [WARNING] clerk_scraper —   Attempt 1/3 failed for SL: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("table.resultsTable, #searchResults, .no-results, #tblResults") to be visible
+
+2026-04-10 15:42:00,480 [WARNING] clerk_scraper — Could not locate date fields — using default range
+2026-04-10 15:42:20,508 [WARNING] clerk_scraper —   Attempt 2/3 failed for SL: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("table.resultsTable, #searchResults, .no-results, #tblResults") to be visible
+
+2026-04-10 15:42:27,564 [WARNING] clerk_scraper — Could not locate date fields — using default range
+2026-04-10 15:42:47,597 [WARNING] clerk_scraper —   Attempt 3/3 failed for SL: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("table.resultsTable, #searchResults, .no-results, #tblResults") to be visible
+
+2026-04-10 15:42:47,597 [ERROR] clerk_scraper —   All retries exhausted for SL
+2026-04-10 15:42:47,597 [INFO] clerk_scraper —   → 0 records for SL
+2026-04-10 15:42:47,598 [INFO] clerk_scraper — Scraping DE (Tax Deed) …
+2026-04-10 15:42:48,643 [WARNING] clerk_scraper — Could not locate date fields — using default range
+2026-04-10 15:43:08,681 [WARNING] clerk_scraper —   Attempt 1/3 failed for DE: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("table.resultsTable, #searchResults, .no-results, #tblResults") to be visible
+
+2026-04-10 15:43:12,742 [WARNING] clerk_scraper — Could not locate date fields — using default range
+2026-04-10 15:43:32,776 [WARNING] clerk_scraper —   Attempt 2/3 failed for DE: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("table.resultsTable, #searchResults, .no-results, #tblResults") to be visible
+
+2026-04-10 15:43:39,824 [WARNING] clerk_scraper — Could not locate date fields — using default range
+2026-04-10 15:43:59,866 [WARNING] clerk_scraper —   Attempt 3/3 failed for DE: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("table.resultsTable, #searchResults, .no-results, #tblResults") to be visible
+
+2026-04-10 15:43:59,866 [ERROR] clerk_scraper —   All retries exhausted for DE
+2026-04-10 15:43:59,866 [INFO] clerk_scraper —   → 0 records for DE
+2026-04-10 15:43:59,866 [INFO] clerk_scraper — Scraping PD (Probate Document) …
+2026-04-10 15:44:00,917 [WARNING] clerk_scraper — Could not locate date fields — using default range
+2026-04-10 15:44:20,952 [WARNING] clerk_scraper —   Attempt 1/3 failed for PD: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("table.resultsTable, #searchResults, .no-results, #tblResults") to be visible
+
+2026-04-10 15:44:24,991 [WARNING] clerk_scraper — Could not locate date fields — using default range
+2026-04-10 15:44:45,018 [WARNING] clerk_scraper —   Attempt 2/3 failed for PD: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("table.resultsTable, #searchResults, .no-results, #tblResults") to be visible
+
+2026-04-10 15:44:52,072 [WARNING] clerk_scraper — Could not locate date fields — using default range
+2026-04-10 15:45:12,107 [WARNING] clerk_scraper —   Attempt 3/3 failed for PD: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("table.resultsTable, #searchResults, .no-results, #tblResults") to be visible
+
+2026-04-10 15:45:12,107 [ERROR] clerk_scraper —   All retries exhausted for PD
+2026-04-10 15:45:12,107 [INFO] clerk_scraper —   → 0 records for PD
+2026-04-10 15:45:12,107 [INFO] clerk_scraper — Scraping PJ (Probate Document) …
+2026-04-10 15:45:13,154 [WARNING] clerk_scraper — Could not locate date fields — using default range
+2026-04-10 15:45:33,184 [WARNING] clerk_scraper —   Attempt 1/3 failed for PJ: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("table.resultsTable, #searchResults, .no-results, #tblResults") to be visible
+
+2026-04-10 15:45:37,243 [WARNING] clerk_scraper — Could not locate date fields — using default range
+2026-04-10 15:45:57,281 [WARNING] clerk_scraper —   Attempt 2/3 failed for PJ: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("table.resultsTable, #searchResults, .no-results, #tblResults") to be visible
+
+2026-04-10 15:46:04,334 [WARNING] clerk_scraper — Could not locate date fields — using default range
+2026-04-10 15:46:24,366 [WARNING] clerk_scraper —   Attempt 3/3 failed for PJ: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("table.resultsTable, #searchResults, .no-results, #tblResults") to be visible
+
+2026-04-10 15:46:24,366 [ERROR] clerk_scraper —   All retries exhausted for PJ
+2026-04-10 15:46:24,366 [INFO] clerk_scraper —   → 0 records for PJ
+2026-04-10 15:46:24,412 [INFO] clerk_scraper — Total clerk records: 0
+2026-04-10 15:46:24,412 [INFO] fetch — Clerk scrape complete — 0 raw records
+2026-04-10 15:46:24,412 [INFO] enricher — Enriched 0 records
+2026-04-10 15:46:24,412 [INFO] fetch — Enrichment complete — 0 records
+2026-04-10 15:46:24,413 [INFO] exporter — JSON saved → dashboard/records.json (0 records)
+2026-04-10 15:46:24,413 [INFO] fetch — Saved → dashboard/records.json
+2026-04-10 15:46:24,413 [INFO] exporter — JSON saved → data/records.json (0 records)
+2026-04-10 15:46:24,413 [INFO] fetch — Saved → data/records.json
+2026-04-10 15:46:24,413 [INFO] exporter — GHL CSV → data/ghl_export.csv (0 rows)
+2026-04-10 15:46:24,413 [INFO] fetch — GHL CSV → data/ghl_export.csv
+2026-04-10 15:46:24,413 [INFO] fetch — Run complete | total=0 | with_addr=0 | top_score=0
