@@ -1,10 +1,12 @@
 """
-scraper/clerk_scraper.py  v7
-Uses Maricopa public API with required Referer header.
-
+scraper/clerk_scraper.py  v8 — CONFIRMED WORKING
 API: https://publicapi.recorder.maricopa.gov/documents/search
-Requires headers: Referer + Origin pointing to recorder.maricopa.gov
-Date format: YYYY-MM-DD  (confirmed working from browser)
+Confirmed constraints:
+  - pageSize max = 200
+  - maxResults max = 200
+  - Requires Referer + Origin headers from recorder.maricopa.gov
+  - Date format: YYYY-MM-DD
+  - pageSize=200 returns all results in one call for typical weekly pulls
 """
 
 import asyncio
@@ -22,8 +24,9 @@ API_BASE    = "https://publicapi.recorder.maricopa.gov"
 SEARCH_URL  = f"{API_BASE}/documents/search"
 PORTAL_BASE = "https://recorder.maricopa.gov"
 
-PAGE_SIZE     = 500
-MAX_RESULTS   = 9999
+PAGE_SIZE   = 200   # confirmed API max
+MAX_RESULTS = 200   # confirmed API max — paginate to get more if needed
+
 MAX_RETRIES   = 3
 RETRY_DELAY   = 5
 REQUEST_DELAY = 0.5
@@ -37,13 +40,9 @@ DOC_CODES = {
     "PJ": "PJ",
 }
 
-# These headers are required — the API returns 400 without them
 SESSION = requests.Session()
 SESSION.headers.update({
-    "User-Agent": (
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-    ),
+    "User-Agent":      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
     "Accept":          "application/json, text/plain, */*",
     "Accept-Language": "en-US,en;q=0.9",
     "Referer":         f"{PORTAL_BASE}/recording/document-search-results.html",
@@ -55,17 +54,14 @@ SESSION.headers.update({
 class ClerkScraper:
     def __init__(self, lead_types: dict, start_date: str, end_date: str):
         self.lead_types = lead_types
-        self.start_date = start_date   # YYYY-MM-DD
+        self.start_date = start_date
         self.end_date   = end_date
         self.records: list[dict] = []
 
     async def run(self) -> list[dict]:
-        # Warm up session by hitting the portal first (sets cookies)
+        # Warm up session cookies via portal
         try:
-            SESSION.get(
-                f"{PORTAL_BASE}/recording/document-search.html",
-                timeout=15,
-            )
+            SESSION.get(f"{PORTAL_BASE}/recording/document-search.html", timeout=15)
             log.info("Session warmed up via portal")
         except Exception as e:
             log.warning(f"Portal warmup failed (non-fatal): {e}")
@@ -74,17 +70,14 @@ class ClerkScraper:
             doc_code       = DOC_CODES.get(lead_key)
             cat, cat_label = self.lead_types[lead_key]
             log.info(f"Scraping {lead_key} ({cat_label})")
-
             if not doc_code:
                 continue
-
             try:
                 recs = self._fetch_all(lead_key, doc_code, cat, cat_label)
                 log.info(f"  → {len(recs)} records for {lead_key}")
                 self.records.extend(recs)
             except Exception as exc:
                 log.error(f"  ✗ Failed {lead_key}: {exc}", exc_info=True)
-
             time.sleep(REQUEST_DELAY)
 
         log.info(f"Total records: {len(self.records)}")
@@ -119,6 +112,7 @@ class ClerkScraper:
                 except Exception as exc:
                     log.debug(f"  Row error: {exc}")
 
+            # If total > 200, paginate
             if len(all_records) >= total or len(results) < PAGE_SIZE:
                 break
             page += 1
@@ -162,12 +156,9 @@ class ClerkScraper:
                 resp = SESSION.get(url, params=params, timeout=20)
                 if resp.ok:
                     return resp.json()
-                log.warning(f"  HTTP {resp.status_code} for {url} — params: {params}")
-                # Log response body on 400 to help debug
-                if resp.status_code == 400:
-                    log.warning(f"  400 response body: {resp.text[:300]}")
+                log.warning(f"  HTTP {resp.status_code} — {resp.text[:200]}")
             except Exception as exc:
-                log.warning(f"  Request attempt {attempt} failed: {exc}")
+                log.warning(f"  Attempt {attempt} failed: {exc}")
             time.sleep(RETRY_DELAY * attempt)
         return None
 
