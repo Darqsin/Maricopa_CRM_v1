@@ -104,3 +104,103 @@ Call log:
 2026-04-10 15:46:24,413 [INFO] exporter — GHL CSV → data/ghl_export.csv (0 rows)
 2026-04-10 15:46:24,413 [INFO] fetch — GHL CSV → data/ghl_export.csv
 2026-04-10 15:46:24,413 [INFO] fetch — Run complete | total=0 | with_addr=0 | top_score=0
+2026-04-10 16:06:55,852 [INFO] fetch — Run started | lookback=1d | 2026-04-09 → 2026-04-10
+2026-04-10 16:06:58,671 [INFO] clerk_scraper — Scraping NS (Notice of Trustee Sale) — code: NOTS
+2026-04-10 16:09:51,631 [WARNING] clerk_scraper —   Wait for results timed out on attempt 1
+2026-04-10 16:09:51,632 [WARNING] clerk_scraper —   Attempt 1/3 failed for NS: Page.wait_for_function: Timeout 30000ms exceeded.
+2026-04-10 16:10:55,637 [WARNING] clerk_scraper —   Attempt 2/3 failed for NS: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:12:03,646 [WARNING] clerk_scraper —   Attempt 3/3 failed for NS: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:12:03,646 [ERROR] clerk_scraper —   All retries exhausted for NS
+2026-04-10 16:12:03,647 [INFO] clerk_scraper —   → 0 records for NS
+2026-04-10 16:12:05,647 [INFO] clerk_scraper — Scraping FL (Federal Tax Lien) — code: FTLF
+2026-04-10 16:13:05,649 [WARNING] clerk_scraper —   Attempt 1/3 failed for FL: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:14:09,652 [WARNING] clerk_scraper —   Attempt 2/3 failed for FL: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:15:17,660 [WARNING] clerk_scraper —   Attempt 3/3 failed for FL: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:15:17,660 [ERROR] clerk_scraper —   All retries exhausted for FL
+2026-04-10 16:15:17,660 [INFO] clerk_scraper —   → 0 records for FL
+2026-04-10 16:15:19,662 [INFO] clerk_scraper — Scraping SL (State Tax Lien) — code: STLF
+2026-04-10 16:16:19,663 [WARNING] clerk_scraper —   Attempt 1/3 failed for SL: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:17:23,668 [WARNING] clerk_scraper —   Attempt 2/3 failed for SL: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:18:31,672 [WARNING] clerk_scraper —   Attempt 3/3 failed for SL: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:18:31,673 [ERROR] clerk_scraper —   All retries exhausted for SL
+2026-04-10 16:18:31,673 [INFO] clerk_scraper —   → 0 records for SL
+2026-04-10 16:18:33,675 [INFO] clerk_scraper — Scraping DE (Tax Deed) — code: TDEED
+2026-04-10 16:19:33,676 [WARNING] clerk_scraper —   Attempt 1/3 failed for DE: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:20:37,678 [WARNING] clerk_scraper —   Attempt 2/3 failed for DE: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:21:45,686 [WARNING] clerk_scraper —   Attempt 3/3 failed for DE: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:21:45,686 [ERROR] clerk_scraper —   All retries exhausted for DE
+2026-04-10 16:21:45,686 [INFO] clerk_scraper —   → 0 records for DE
+2026-04-10 16:21:47,689 [INFO] clerk_scraper — Scraping PD (Probate Document) — code: PROBD
+2026-04-10 16:22:47,690 [WARNING] clerk_scraper —   Attempt 1/3 failed for PD: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:23:51,694 [WARNING] clerk_scraper —   Attempt 2/3 failed for PD: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:24:59,702 [WARNING] clerk_scraper —   Attempt 3/3 failed for PD: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:24:59,702 [ERROR] clerk_scraper —   All retries exhausted for PD
+2026-04-10 16:24:59,702 [INFO] clerk_scraper —   → 0 records for PD
+2026-04-10 16:25:01,704 [INFO] clerk_scraper — Scraping PJ (Probate Document) — code: PROJD
+2026-04-10 16:26:01,706 [WARNING] clerk_scraper —   Attempt 1/3 failed for PJ: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:27:05,709 [WARNING] clerk_scraper —   Attempt 2/3 failed for PJ: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:28:13,718 [WARNING] clerk_scraper —   Attempt 3/3 failed for PJ: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://recorder.maricopa.gov/recording/document-search.html", waiting until "networkidle"
+
+2026-04-10 16:28:13,718 [ERROR] clerk_scraper —   All retries exhausted for PJ
+2026-04-10 16:28:13,718 [INFO] clerk_scraper —   → 0 records for PJ
+2026-04-10 16:28:15,763 [INFO] clerk_scraper — Total clerk records collected: 0
+2026-04-10 16:28:15,763 [INFO] fetch — Clerk scrape complete — 0 raw records
+2026-04-10 16:28:15,763 [INFO] enricher — Enriched 0 records
+2026-04-10 16:28:15,763 [INFO] fetch — Enrichment complete — 0 records
+2026-04-10 16:28:15,764 [INFO] exporter — JSON saved → dashboard/records.json (0 records)
+2026-04-10 16:28:15,764 [INFO] fetch — Saved → dashboard/records.json
+2026-04-10 16:28:15,764 [INFO] exporter — JSON saved → data/records.json (0 records)
+2026-04-10 16:28:15,764 [INFO] fetch — Saved → data/records.json
+2026-04-10 16:28:15,764 [INFO] exporter — GHL CSV → data/ghl_export.csv (0 rows)
+2026-04-10 16:28:15,764 [INFO] fetch — GHL CSV → data/ghl_export.csv
+2026-04-10 16:28:15,765 [INFO] fetch — Run complete | total=0 | with_addr=0 | top_score=0
