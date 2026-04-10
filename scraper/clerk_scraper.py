@@ -1,24 +1,10 @@
 """
-scraper/clerk_scraper.py  v6 — FINAL (API-based)
+scraper/clerk_scraper.py  v7
+Uses Maricopa public API with required Referer header.
 
-Uses the confirmed public Maricopa Recorder API directly.
-No browser automation needed for search — pure requests.
-
-Confirmed endpoints (from live network inspection):
-  Search: GET https://publicapi.recorder.maricopa.gov/documents/search
-    Params: documentCode, beginDate (YYYY-MM-DD), endDate (YYYY-MM-DD),
-            pageSize, pageNumber, maxResults
-  Detail: GET https://publicapi.recorder.maricopa.gov/documents/{recordingNumber}
-    Returns: names[], documentCodes[], recordingDate, recordingNumber,
-             pageAmount, restricted
-
-Confirmed doc code values (from live Select2 options):
-  NS = Notice of Trustees Sale
-  FL = Federal Tax Lien
-  SL = State Tax Lien
-  DE = Tax Deed
-  PD = Probate Deed
-  PJ = Probate (general)
+API: https://publicapi.recorder.maricopa.gov/documents/search
+Requires headers: Referer + Origin pointing to recorder.maricopa.gov
+Date format: YYYY-MM-DD  (confirmed working from browser)
 """
 
 import asyncio
@@ -34,15 +20,13 @@ log = logging.getLogger("clerk_scraper")
 
 API_BASE    = "https://publicapi.recorder.maricopa.gov"
 SEARCH_URL  = f"{API_BASE}/documents/search"
-DETAIL_URL  = f"{API_BASE}/documents"
 PORTAL_BASE = "https://recorder.maricopa.gov"
 
-PAGE_SIZE   = 500   # max per request — reduces round trips
-MAX_RESULTS = 9999
-
+PAGE_SIZE     = 500
+MAX_RESULTS   = 9999
 MAX_RETRIES   = 3
-RETRY_DELAY   = 3
-REQUEST_DELAY = 0.3   # polite delay between requests
+RETRY_DELAY   = 5
+REQUEST_DELAY = 0.5
 
 DOC_CODES = {
     "NS": "NS",
@@ -53,15 +37,18 @@ DOC_CODES = {
     "PJ": "PJ",
 }
 
+# These headers are required — the API returns 400 without them
 SESSION = requests.Session()
 SESSION.headers.update({
     "User-Agent": (
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     ),
-    "Accept":  "application/json, */*",
-    "Referer": "https://recorder.maricopa.gov/recording/document-search-results.html",
-    "Origin":  "https://recorder.maricopa.gov",
+    "Accept":          "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer":         f"{PORTAL_BASE}/recording/document-search-results.html",
+    "Origin":          PORTAL_BASE,
+    "Connection":      "keep-alive",
 })
 
 
@@ -72,15 +59,23 @@ class ClerkScraper:
         self.end_date   = end_date
         self.records: list[dict] = []
 
-    # ── entry point (kept async for compatibility with fetch.py) ──────────
     async def run(self) -> list[dict]:
+        # Warm up session by hitting the portal first (sets cookies)
+        try:
+            SESSION.get(
+                f"{PORTAL_BASE}/recording/document-search.html",
+                timeout=15,
+            )
+            log.info("Session warmed up via portal")
+        except Exception as e:
+            log.warning(f"Portal warmup failed (non-fatal): {e}")
+
         for lead_key in self.lead_types:
             doc_code       = DOC_CODES.get(lead_key)
             cat, cat_label = self.lead_types[lead_key]
             log.info(f"Scraping {lead_key} ({cat_label})")
 
             if not doc_code:
-                log.warning(f"No doc code for {lead_key} — skipping")
                 continue
 
             try:
@@ -95,25 +90,21 @@ class ClerkScraper:
         log.info(f"Total records: {len(self.records)}")
         return self.records
 
-    # ── fetch all pages for one doc type ──────────────────────────────────
     def _fetch_all(self, lead_key, doc_code, cat, cat_label) -> list[dict]:
-        params = {
-            "documentCode": doc_code,
-            "beginDate":    self.start_date,
-            "endDate":      self.end_date,
-            "pageSize":     PAGE_SIZE,
-            "pageNumber":   1,
-            "maxResults":   MAX_RESULTS,
-        }
-
         all_records = []
         page = 1
 
         while True:
-            params["pageNumber"] = page
+            params = {
+                "documentCode": doc_code,
+                "beginDate":    self.start_date,
+                "endDate":      self.end_date,
+                "pageSize":     PAGE_SIZE,
+                "pageNumber":   page,
+                "maxResults":   MAX_RESULTS,
+            }
             data = self._get(SEARCH_URL, params)
             if data is None:
-                log.warning(f"  API returned None for {lead_key} page {page}")
                 break
 
             results = data.get("searchResults", [])
@@ -126,9 +117,8 @@ class ClerkScraper:
                     if rec:
                         all_records.append(rec)
                 except Exception as exc:
-                    log.debug(f"  Row parse error: {exc}")
+                    log.debug(f"  Row error: {exc}")
 
-            # Paginate
             if len(all_records) >= total or len(results) < PAGE_SIZE:
                 break
             page += 1
@@ -136,34 +126,19 @@ class ClerkScraper:
 
         return all_records
 
-    # ── convert one API result item → record dict ──────────────────────────
     def _item_to_record(self, item: dict, lead_key, cat, cat_label) -> Optional[dict]:
         doc_num = str(item.get("recordingNumber", "")).strip()
         if not doc_num:
             return None
 
-        filed    = _norm_date(item.get("recordingDate", ""))
-        doc_type = item.get("documentCode", cat)
-        # names field from search is often empty; enricher fills from detail API
-        names_raw = item.get("names", "") or ""
-
-        clerk_url = (
-            f"{PORTAL_BASE}/recording/document-details?"
-            f"id={doc_num}"
-        )
-        pdf_url = (
-            f"{PORTAL_BASE}/recording/document-preview.html?"
-            f"recNum={doc_num}"
-        )
-
         return {
             "doc_num":       doc_num,
-            "doc_type":      doc_type,
-            "filed":         filed,
+            "doc_type":      item.get("documentCode", cat),
+            "filed":         _norm_date(item.get("recordingDate", "")),
             "cat":           cat,
             "cat_label":     cat_label,
             "lead_key":      lead_key,
-            "owner":         names_raw if isinstance(names_raw, str) else "",
+            "owner":         item.get("names", "") or "",
             "grantee":       "",
             "amount":        None,
             "legal":         "",
@@ -176,28 +151,28 @@ class ClerkScraper:
             "first_name_2":  None, "last_name_2":  None,
             "trustee_name":  None, "trustee_phone": None,
             "auction_date":  None,
-            "pdf_url":       pdf_url,
-            "clerk_url":     clerk_url,
+            "pdf_url":       f"{PORTAL_BASE}/recording/document-preview.html?recNum={doc_num}",
+            "clerk_url":     f"{PORTAL_BASE}/recording/document-details?id={doc_num}",
             "flags": [], "score": 0,
         }
 
-    # ── HTTP GET with retry ────────────────────────────────────────────────
-    def _get(self, url: str, params: dict = None) -> Optional[dict]:
+    def _get(self, url: str, params: dict) -> Optional[dict]:
         for attempt in range(1, MAX_RETRIES + 1):
             try:
                 resp = SESSION.get(url, params=params, timeout=20)
                 if resp.ok:
                     return resp.json()
-                log.warning(f"  HTTP {resp.status_code} for {url}")
+                log.warning(f"  HTTP {resp.status_code} for {url} — params: {params}")
+                # Log response body on 400 to help debug
+                if resp.status_code == 400:
+                    log.warning(f"  400 response body: {resp.text[:300]}")
             except Exception as exc:
                 log.warning(f"  Request attempt {attempt} failed: {exc}")
             time.sleep(RETRY_DELAY * attempt)
         return None
 
 
-# ── utilities ──────────────────────────────────────────────────────────────────
 def _norm_date(raw: str) -> str:
-    """Handle M-DD-YYYY, MM/DD/YYYY, YYYY-MM-DD."""
     raw = raw.strip().replace("-", "/")
     for fmt in ("%m/%d/%Y", "%Y/%m/%d", "%m/%d/%y"):
         try:
