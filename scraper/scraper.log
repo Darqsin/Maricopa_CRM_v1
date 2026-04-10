@@ -366,3 +366,36 @@ Call log:
 2026-04-10 20:14:17,902 [INFO] exporter — GHL CSV → data/ghl_export.csv (99 rows)
 2026-04-10 20:14:17,902 [INFO] fetch — GHL CSV → data/ghl_export.csv
 2026-04-10 20:14:17,902 [INFO] fetch — Run complete | total=99 | with_addr=0 | top_score=44
+2026-04-10 20:21:04,409 [INFO] fetch — Run started | lookback=1d | 2026-04-09 → 2026-04-10
+2026-04-10 20:21:04,538 [INFO] clerk_scraper — Session warmed up via portal
+2026-04-10 20:21:04,538 [INFO] clerk_scraper — Scraping NS (Notice of Trustee Sale)
+2026-04-10 20:21:04,923 [INFO] clerk_scraper —   Page 1: 37 rows (total=37)
+2026-04-10 20:21:04,946 [INFO] clerk_scraper —   → 37 records for NS
+2026-04-10 20:21:05,446 [INFO] clerk_scraper — Scraping FL (Federal Tax Lien)
+2026-04-10 20:21:05,603 [INFO] clerk_scraper —   Page 1: 0 rows (total=0)
+2026-04-10 20:21:05,603 [INFO] clerk_scraper —   → 0 records for FL
+2026-04-10 20:21:06,104 [INFO] clerk_scraper — Scraping SL (State Tax Lien)
+2026-04-10 20:21:06,261 [INFO] clerk_scraper —   Page 1: 20 rows (total=20)
+2026-04-10 20:21:06,262 [INFO] clerk_scraper —   → 20 records for SL
+2026-04-10 20:21:06,762 [INFO] clerk_scraper — Scraping DE (Tax Deed)
+2026-04-10 20:21:06,925 [INFO] clerk_scraper —   Page 1: 3 rows (total=3)
+2026-04-10 20:21:06,926 [INFO] clerk_scraper —   → 3 records for DE
+2026-04-10 20:21:07,426 [INFO] clerk_scraper — Scraping PD (Probate Document)
+2026-04-10 20:21:07,583 [INFO] clerk_scraper —   Page 1: 10 rows (total=10)
+2026-04-10 20:21:07,583 [INFO] clerk_scraper —   → 10 records for PD
+2026-04-10 20:21:08,084 [INFO] clerk_scraper — Scraping PJ (Probate Document)
+2026-04-10 20:21:08,232 [INFO] clerk_scraper —   Page 1: 30 rows (total=30)
+2026-04-10 20:21:08,233 [INFO] clerk_scraper —   → 30 records for PJ
+2026-04-10 20:21:08,733 [INFO] clerk_scraper — Total records: 100
+2026-04-10 20:21:08,733 [INFO] fetch — Clerk scrape complete — 100 raw records
+2026-04-10 20:21:08,733 [INFO] enricher — Enriching 100 records via PNG OCR...
+2026-04-10 20:21:08,747 [INFO] enricher — OCR engine ready (pytesseract)
+2026-04-10 20:33:58,069 [INFO] enricher — Enrichment done: 55/100 addresses (55%)
+2026-04-10 20:33:58,070 [INFO] fetch — Enrichment complete — 100 records
+2026-04-10 20:33:58,073 [INFO] exporter — JSON saved → dashboard/records.json (100 records)
+2026-04-10 20:33:58,074 [INFO] fetch — Saved → dashboard/records.json
+2026-04-10 20:33:58,076 [INFO] exporter — JSON saved → data/records.json (100 records)
+2026-04-10 20:33:58,076 [INFO] fetch — Saved → data/records.json
+2026-04-10 20:33:58,077 [INFO] exporter — GHL CSV → data/ghl_export.csv (100 rows)
+2026-04-10 20:33:58,078 [INFO] fetch — GHL CSV → data/ghl_export.csv
+2026-04-10 20:33:58,078 [INFO] fetch — Run complete | total=100 | with_addr=55 | top_score=78
