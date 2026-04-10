@@ -1,30 +1,39 @@
 """
-scraper/enricher.py
-Enriches raw clerk records with:
-  - Mailing address (from document detail page)
-  - Property address (from detail / parcel lookup)
-  - Parcel number
-  - Trustee name & phone (NTS specific)
-  - Auction date (NTS specific)
-  - PDF document URL
-Uses requests + BeautifulSoup with retry logic. Never crashes on bad records.
+scraper/enricher.py  v2 — uses Maricopa public API for detail lookup.
+
+Confirmed detail API:
+  GET https://publicapi.recorder.maricopa.gov/documents/{recordingNumber}
+  Returns: {
+    "names": ["CLEAR RECON CORP", "FINANCE OF AMERICA REVERSE LLC", "JAROS FRANK"],
+    "documentCodes": ["N/TR SALE"],
+    "recordingDate": "4-03-2026",
+    "recordingNumber": "20260196990",
+    "pageAmount": 3,
+    "restricted": false
+  }
+
+Name order for NTS: [0]=Trustee, [1]=Lender/Beneficiary, [2]=Trustor/Owner
+For other doc types names[0] is typically the grantor/owner.
 """
 
 import logging
 import re
 import time
 from typing import Optional
-from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
 
 log = logging.getLogger("enricher")
 
+API_BASE      = "https://publicapi.recorder.maricopa.gov"
+PORTAL_BASE   = "https://recorder.maricopa.gov"
 MAX_RETRIES   = 3
-RETRY_DELAY   = 2   # seconds
-REQUEST_DELAY = 0.4  # polite delay between requests
+RETRY_DELAY   = 2
+REQUEST_DELAY = 0.35
 TIMEOUT       = 15
+
+SUFFIXES = {"JR", "SR", "II", "III", "IV", "TRUST", "LLC", "CORP", "INC", "LP", "LLP"}
 
 SESSION = requests.Session()
 SESSION.headers.update({
@@ -32,10 +41,9 @@ SESSION.headers.update({
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     ),
-    "Accept": "text/html,application/xhtml+xml,*/*;q=0.9",
+    "Accept":  "application/json, */*",
+    "Referer": "https://recorder.maricopa.gov/",
 })
-
-BASE_URL = "https://recorder.maricopa.gov"
 
 
 def enrich_records(records: list[dict]) -> list[dict]:
@@ -49,181 +57,163 @@ def enrich_records(records: list[dict]) -> list[dict]:
             log.warning(f"Enrichment failed for {rec.get('doc_num')}: {exc}")
         enriched.append(rec)
         time.sleep(REQUEST_DELAY)
-    log.info(f"Enriched {len(enriched)} records")
     return enriched
 
 
 def _enrich_one(rec: dict) -> dict:
-    clerk_url = rec.get("clerk_url")
-    if not clerk_url:
+    doc_num = rec.get("doc_num")
+    if not doc_num:
         return rec
 
-    html = _fetch(clerk_url)
-    if not html:
-        return rec
+    # ── 1. Fetch detail from public API ───────────────────────────────────
+    detail = _fetch_json(f"{API_BASE}/documents/{doc_num}")
+    if detail:
+        names = detail.get("names") or []
 
-    soup = BeautifulSoup(html, "lxml")
+        # Parse names by lead type
+        if rec.get("lead_key") == "NS":
+            # NTS order: [Trustee, Lender, Owner/Trustor, ...]
+            if len(names) >= 1:
+                rec["trustee_name"] = names[0]
+            if len(names) >= 3:
+                owner_raw = names[2]
+            elif len(names) >= 2:
+                owner_raw = names[1]
+            else:
+                owner_raw = names[0] if names else ""
+            rec["owner"] = owner_raw
+        else:
+            # For liens/deeds/probate: first name is typically the owner
+            rec["owner"]   = names[0] if len(names) > 0 else rec.get("owner", "")
+            rec["grantee"] = names[1] if len(names) > 1 else rec.get("grantee", "")
 
-    # ── parcel number ──────────────────────────────────────────────────────
-    rec["parcel"] = rec.get("parcel") or _extract_parcel(soup, html)
+        # Parse first/last names from owner
+        name_parsed = _parse_owner_name(rec.get("owner", ""))
+        rec.update(name_parsed)
 
-    # ── PDF url ────────────────────────────────────────────────────────────
-    rec["pdf_url"] = rec.get("pdf_url") or _extract_pdf_url(soup, clerk_url)
+        if len(names) > 1 and rec.get("lead_key") != "NS":
+            name2 = _parse_owner_name(names[1], prefix="2_")
+            rec["first_name_2"] = name2.get("2_first_name", "")
+            rec["last_name_2"]  = name2.get("2_last_name", "")
 
-    # ── mailing address ────────────────────────────────────────────────────
-    mail = _extract_address_block(soup, "mail")
-    if mail:
-        rec["mail_address"] = mail.get("address")
-        rec["mail_city"]    = mail.get("city")
-        rec["mail_state"]   = mail.get("state")
-        rec["mail_zip"]     = mail.get("zip")
+        rec["restricted"] = detail.get("restricted", False)
 
-    # ── property address ───────────────────────────────────────────────────
-    prop = _extract_address_block(soup, "prop")
-    if prop:
-        rec["prop_address"] = prop.get("address")
-        rec["prop_city"]    = prop.get("city")
-        rec["prop_state"]   = prop.get("state") or "AZ"
-        rec["prop_zip"]     = prop.get("zip")
+    # ── 2. Fetch the document detail HTML page for address + NTS fields ───
+    detail_html_url = f"{PORTAL_BASE}/recording/document-details?id={doc_num}"
+    html = _fetch_html(detail_html_url)
+    if html:
+        soup = BeautifulSoup(html, "lxml")
+        text = soup.get_text(separator=" ")
 
-    # Fallback: if only one address found use for both
-    if rec.get("mail_address") and not rec.get("prop_address"):
-        rec["prop_address"] = rec["mail_address"]
-        rec["prop_city"]    = rec["mail_city"]
-        rec["prop_state"]   = rec["mail_state"] or "AZ"
-        rec["prop_zip"]     = rec["mail_zip"]
+        # Property / mailing address
+        prop = _extract_address(soup, text, "prop")
+        if prop:
+            rec["prop_address"] = prop.get("address")
+            rec["prop_city"]    = prop.get("city")
+            rec["prop_state"]   = prop.get("state") or "AZ"
+            rec["prop_zip"]     = prop.get("zip")
 
-    # ── owner name parsing ─────────────────────────────────────────────────
-    owner_parsed = _parse_owner_name(rec.get("owner", ""))
-    rec.update(owner_parsed)
+        mail = _extract_address(soup, text, "mail")
+        if mail:
+            rec["mail_address"] = mail.get("address")
+            rec["mail_city"]    = mail.get("city")
+            rec["mail_state"]   = mail.get("state")
+            rec["mail_zip"]     = mail.get("zip")
 
-    grantee_parsed = _parse_owner_name(rec.get("grantee", ""), prefix="grantee_")
-    rec.update(grantee_parsed)
+        # If only one address found, use for both
+        if rec.get("prop_address") and not rec.get("mail_address"):
+            rec["mail_address"] = rec["prop_address"]
+            rec["mail_city"]    = rec["prop_city"]
+            rec["mail_state"]   = rec["prop_state"]
+            rec["mail_zip"]     = rec["prop_zip"]
 
-    # ── NTS-specific: trustee + auction date ───────────────────────────────
-    if rec.get("cat") == "NOTS" or rec.get("lead_key") == "NS":
-        nts = _extract_nts_fields(soup, html)
-        rec["trustee_name"]  = rec.get("trustee_name")  or nts.get("trustee_name")
-        rec["trustee_phone"] = rec.get("trustee_phone") or nts.get("trustee_phone")
-        rec["auction_date"]  = rec.get("auction_date")  or nts.get("auction_date")
-        rec["amount"]        = rec.get("amount")        or nts.get("loan_amount")
+        # Parcel number
+        rec["parcel"] = rec.get("parcel") or _extract_parcel(text)
+
+        # NTS-specific fields
+        if rec.get("lead_key") == "NS":
+            nts = _extract_nts(text)
+            rec["trustee_phone"] = rec.get("trustee_phone") or nts.get("phone")
+            rec["auction_date"]  = rec.get("auction_date")  or nts.get("auction_date")
+            rec["amount"]        = rec.get("amount")        or nts.get("loan_amount")
+            if nts.get("trustee_name") and not rec.get("trustee_name"):
+                rec["trustee_name"] = nts["trustee_name"]
+
+        # Amount from lien docs
+        if not rec.get("amount"):
+            rec["amount"] = _extract_amount(text)
 
     return rec
 
 
-# ── HTTP fetch with retry ──────────────────────────────────────────────────────
-def _fetch(url: str) -> Optional[str]:
+# ── HTTP helpers ───────────────────────────────────────────────────────────────
+def _fetch_json(url: str) -> Optional[dict]:
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            resp = SESSION.get(url, timeout=TIMEOUT)
+            if resp.ok:
+                return resp.json()
+        except Exception as exc:
+            log.debug(f"JSON fetch attempt {attempt} failed for {url}: {exc}")
+        time.sleep(RETRY_DELAY * attempt)
+    return None
+
+
+def _fetch_html(url: str) -> Optional[str]:
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             resp = SESSION.get(url, timeout=TIMEOUT)
             if resp.ok:
                 return resp.text
-            log.debug(f"HTTP {resp.status_code} for {url}")
-        except requests.RequestException as exc:
-            log.debug(f"Request attempt {attempt} failed: {exc}")
+        except Exception as exc:
+            log.debug(f"HTML fetch attempt {attempt} failed for {url}: {exc}")
         time.sleep(RETRY_DELAY * attempt)
     return None
 
 
-# ── parcel extraction ──────────────────────────────────────────────────────────
-def _extract_parcel(soup: BeautifulSoup, raw_html: str) -> Optional[str]:
-    # Maricopa parcel format: XXX-XX-XXX or XXXXXXXXX
+# ── parsers ────────────────────────────────────────────────────────────────────
+def _extract_parcel(text: str) -> Optional[str]:
     patterns = [
         r"\b(\d{3}-\d{2}-\d{3}[A-Z]?)\b",
-        r"\b(\d{3}\s\d{2}\s\d{3})\b",
-        r"[Pp]arcel[:\s#]+([0-9\-\s]{9,14})",
+        r"[Pp]arcel[:\s#]+([0-9\-]{9,14})",
         r"APN[:\s]+([0-9\-]{9,14})",
     ]
     for pat in patterns:
-        m = re.search(pat, raw_html)
+        m = re.search(pat, text)
         if m:
-            return m.group(1).replace(" ", "-").strip()
-
-    # Try labeled fields
-    for label in soup.find_all(string=re.compile(r"[Pp]arcel|APN")):
-        parent = label.parent
-        if parent:
-            sibling = parent.find_next_sibling()
-            if sibling:
-                text = sibling.get_text(strip=True)
-                m = re.search(r"[\d\-]{7,14}", text)
-                if m:
-                    return m.group(0)
+            return m.group(1).strip()
     return None
 
 
-# ── PDF URL extraction ─────────────────────────────────────────────────────────
-def _extract_pdf_url(soup: BeautifulSoup, base_url: str) -> Optional[str]:
-    # Look for direct PDF links
-    for a in soup.find_all("a", href=True):
-        href = a["href"]
-        if href.lower().endswith(".pdf") or "pdf" in href.lower():
-            return urljoin(base_url, href)
-
-    # Look for "View Document" or "View Image" links
-    for a in soup.find_all("a"):
-        text = a.get_text(strip=True).lower()
-        if any(kw in text for kw in ("view document", "view image", "view pdf", "download")):
-            href = a.get("href", "")
-            if href:
-                return urljoin(base_url, href)
-
-    # Look for iframe src
-    for iframe in soup.find_all("iframe", src=True):
-        src = iframe["src"]
-        if "pdf" in src.lower() or "image" in src.lower():
-            return urljoin(base_url, src)
-
-    return None
-
-
-# ── address block extraction ───────────────────────────────────────────────────
-def _extract_address_block(soup: BeautifulSoup, kind: str) -> Optional[dict]:
-    """
-    kind: "mail" or "prop"
-    Searches labeled sections for address components.
-    """
-    label_patterns = {
-        "mail": re.compile(r"mail(ing)?\s*(address)?", re.I),
+def _extract_address(soup: BeautifulSoup, text: str, kind: str) -> Optional[dict]:
+    patterns = {
         "prop": re.compile(r"prop(erty)?\s*(address|location)?|situs", re.I),
+        "mail": re.compile(r"mail(ing)?\s*(address)?", re.I),
     }
-    pat = label_patterns.get(kind, re.compile(kind, re.I))
+    pat = patterns.get(kind, re.compile(kind, re.I))
 
-    # Strategy 1: find label, grab next sibling content
-    for label_el in soup.find_all(string=pat):
-        parent = label_el.parent
-        container = parent.parent if parent else None
+    for label in soup.find_all(string=pat):
+        container = label.parent
         if container:
-            block = _parse_address_from_text(container.get_text(separator=" "))
+            block = container.find_next_sibling() or container.parent
             if block:
-                return block
+                addr = _parse_address_text(block.get_text(separator=" "))
+                if addr:
+                    return addr
 
-    # Strategy 2: look for table cells with label
     for td in soup.find_all("td"):
-        text = td.get_text(strip=True)
-        if pat.search(text):
+        if pat.search(td.get_text(strip=True)):
             nxt = td.find_next_sibling("td")
             if nxt:
-                block = _parse_address_from_text(nxt.get_text(separator=" "))
-                if block:
-                    return block
-
-    # Strategy 3: look for div/span with data-* or id hints
-    for attr_val in (f"{kind}-address", f"{kind}Address", f"{kind}_address"):
-        el = soup.find(id=re.compile(attr_val, re.I))
-        if el:
-            block = _parse_address_from_text(el.get_text(separator=" "))
-            if block:
-                return block
+                addr = _parse_address_text(nxt.get_text(separator=" "))
+                if addr:
+                    return addr
 
     return None
 
 
-def _parse_address_from_text(text: str) -> Optional[dict]:
-    """Extract street/city/state/zip from a text block."""
+def _parse_address_text(text: str) -> Optional[dict]:
     text = " ".join(text.split())
-
-    # Pattern: 123 Main St, Phoenix, AZ 85001
     m = re.search(
         r"(\d+\s+[A-Za-z0-9\s\.#,\-]+?),\s*([A-Za-z\s]+),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)",
         text,
@@ -235,108 +225,55 @@ def _parse_address_from_text(text: str) -> Optional[dict]:
             "state":   m.group(3).strip(),
             "zip":     m.group(4).strip(),
         }
-
-    # Pattern without comma separation
-    m2 = re.search(
-        r"(\d+\s[\w\s\.#]+)\s([A-Za-z ]+)\s([A-Z]{2})\s(\d{5})",
-        text,
-    )
-    if m2:
-        return {
-            "address": m2.group(1).strip(),
-            "city":    m2.group(2).strip(),
-            "state":   m2.group(3).strip(),
-            "zip":     m2.group(4).strip(),
-        }
-
     return None
 
 
-# ── owner name parsing ─────────────────────────────────────────────────────────
-SUFFIXES = {"JR", "SR", "II", "III", "IV", "TRUST", "LLC", "CORP", "INC", "LP", "LLP"}
-
 def _parse_owner_name(raw: str, prefix: str = "") -> dict:
-    """
-    Split 'SMITH JOHN W & JONES MARY' into first/last for two owners.
-    Returns dict with keys: first_name, last_name, first_name_2, last_name_2 (with optional prefix).
-    """
     result = {
-        f"{prefix}first_name":   "",
-        f"{prefix}last_name":    "",
-        f"{prefix}first_name_2": "",
-        f"{prefix}last_name_2":  "",
+        f"{prefix}first_name": "",
+        f"{prefix}last_name":  "",
     }
     if not raw:
         return result
-
-    # Split on & or AND
-    parts = re.split(r"\s+(?:&|AND)\s+", raw.strip(), maxsplit=1)
-
-    def parse_one(s: str):
-        tokens = s.upper().split()
-        if not tokens:
-            return "", ""
-        # Remove suffixes
-        while tokens and tokens[-1] in SUFFIXES:
-            tokens.pop()
-        if len(tokens) == 1:
-            return "", tokens[0]
-        # Assume LASTNAME FIRSTNAME [MIDDLE]
-        last  = tokens[0]
-        first = " ".join(tokens[1:])
-        return first.title(), last.title()
-
-    first, last = parse_one(parts[0])
-    result[f"{prefix}first_name"] = first
-    result[f"{prefix}last_name"]  = last
-
-    if len(parts) > 1:
-        first2, last2 = parse_one(parts[1])
-        result[f"{prefix}first_name_2"] = first2
-        result[f"{prefix}last_name_2"]  = last2
-
+    tokens = raw.upper().split()
+    while tokens and tokens[-1] in SUFFIXES:
+        tokens.pop()
+    if not tokens:
+        return result
+    if len(tokens) == 1:
+        result[f"{prefix}last_name"] = tokens[0].title()
+    else:
+        result[f"{prefix}last_name"]  = tokens[0].title()
+        result[f"{prefix}first_name"] = " ".join(tokens[1:]).title()
     return result
 
 
-# ── NTS-specific extraction ────────────────────────────────────────────────────
-def _extract_nts_fields(soup: BeautifulSoup, raw_html: str) -> dict:
-    out = {
-        "trustee_name":  None,
-        "trustee_phone": None,
-        "auction_date":  None,
-        "loan_amount":   None,
-    }
+def _extract_nts(text: str) -> dict:
+    out: dict = {}
 
-    text = soup.get_text(separator=" ")
-
-    # Trustee name: "Trustee: XYZ Trustee Services"
-    m = re.search(r"[Tt]rustee[:\s]+([A-Za-z][A-Za-z0-9\s\.,&]+?)(?:\n|Phone|Tel|$)", text)
+    m = re.search(
+        r"[Tt]rustee[:\s]+([A-Za-z][A-Za-z0-9\s\.,&]{3,80}?)(?:Phone|Tel|\n|$)", text
+    )
     if m:
         out["trustee_name"] = m.group(1).strip()[:100]
 
-    # Trustee phone
-    m = re.search(r"(?:Phone|Tel|Ph)[:\s]*\(?\d{3}\)?[\s\-\.]\d{3}[\s\-\.]\d{4}", text)
+    m = re.search(r"\(?\d{3}\)?[\s\-\.]\d{3}[\s\-\.]\d{4}", text)
     if m:
-        out["trustee_phone"] = re.search(
-            r"[\(]?\d{3}[\)\s\-\.]+\d{3}[\s\-\.]\d{4}", m.group(0)
-        ).group(0) if re.search(r"[\(]?\d{3}[\)\s\-\.]+\d{3}[\s\-\.]\d{4}", m.group(0)) else None
+        out["phone"] = m.group(0).strip()
 
-    # Auction / sale date
-    date_patterns = [
+    for pat in [
         r"[Ss]ale\s+[Dd]ate[:\s]+(\w+\s+\d{1,2},?\s+\d{4})",
         r"[Aa]uction\s+[Dd]ate[:\s]+(\w+\s+\d{1,2},?\s+\d{4})",
-        r"[Tt]rustee.{1,10}[Ss]ale.{1,30}(\w+\s+\d{1,2},?\s+\d{4})",
         r"(\d{1,2}/\d{1,2}/\d{4})",
-    ]
-    for pat in date_patterns:
+    ]:
         m = re.search(pat, text)
         if m:
-            raw_date = m.group(1).strip()
-            out["auction_date"] = _norm_date_flexible(raw_date)
+            out["auction_date"] = _norm_date_flex(m.group(1))
             break
 
-    # Loan amount
-    m = re.search(r"[Oo]riginal\s+[Ll]oan[:\s]+\$?([\d,]+(?:\.\d{2})?)", text)
+    m = re.search(
+        r"[Oo]riginal\s+[Ll]oan[:\s]+\$?([\d,]+(?:\.\d{2})?)", text
+    )
     if m:
         try:
             out["loan_amount"] = float(m.group(1).replace(",", ""))
@@ -346,14 +283,18 @@ def _extract_nts_fields(soup: BeautifulSoup, raw_html: str) -> dict:
     return out
 
 
-def _norm_date_flexible(raw: str) -> str:
-    import dateutil.parser
-    try:
-        return dateutil.parser.parse(raw).strftime("%Y-%m-%d")
-    except Exception:
-        pass
-    # Manual formats
-    for fmt in ("%m/%d/%Y", "%B %d, %Y", "%b %d, %Y", "%B %d %Y", "%m-%d-%Y"):
+def _extract_amount(text: str) -> Optional[float]:
+    matches = re.findall(r"\$[\d,]+(?:\.\d{2})?", text)
+    if matches:
+        try:
+            return float(matches[0].replace("$", "").replace(",", ""))
+        except ValueError:
+            pass
+    return None
+
+
+def _norm_date_flex(raw: str) -> str:
+    for fmt in ("%B %d, %Y", "%b %d, %Y", "%m/%d/%Y", "%m-%d-%Y", "%B %d %Y"):
         try:
             from datetime import datetime
             return datetime.strptime(raw.strip(), fmt).strftime("%Y-%m-%d")
