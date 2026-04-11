@@ -1,22 +1,21 @@
 """
-scraper/enricher.py  v7 — CONFIRMED WORKING
+scraper/enricher.py  v8
 
-PNG Image API (no login required):
+Key fixes from data analysis:
+1. Names[] array is ALPHABETICAL not positional — must detect persons vs companies
+2. Trustee = company names (CORPS, LLC, INC, FINANCIAL, MORTGAGE, TITLE, etc.)
+3. Borrowers = person names (LASTNAME FIRSTNAME pattern, no company keywords)
+4. Co-borrower handling: "ORTIZ WENDY AND ORTIZ JOSEPH" → split on AND
+5. Couple format: "LASTNAME FIRSTNAME AND LASTNAME2 FIRSTNAME2 HUSBAND AND WIFE"
+6. Original loan / auction date come from OCR only — must improve patterns
+7. Address parsing: "6265 E ADOBE RD, MESA, 85205" confirmed format
+
+PNG API (confirmed working, no auth):
   GET https://publicapi.recorder.maricopa.gov/preview/image
-      ?recordingNumber={DOC_NUM}&suffix=&affidavit=false&pageNumber=1
-  Headers: Referer: https://recorder.maricopa.gov/recording/document-preview.html
-  Returns: image/png  (confirmed 200 for all tested docs)
-
-Pipeline per record:
-  1. Download page 1 PNG via requests
-  2. OCR with pytesseract → extract property address, mailing address,
-     trustee name/phone, auction date, loan amount, owner name
-  3. Download page 2 PNG if page 1 missing key fields
-  4. Fallback: Assessor name search if OCR yields no address
+      ?recordingNumber={DOC}&suffix=&affidavit=false&pageNumber=1
 """
 
 import asyncio
-import base64
 import io
 import logging
 import re
@@ -27,8 +26,8 @@ import requests
 
 log = logging.getLogger("enricher")
 
-PNG_API     = "https://publicapi.recorder.maricopa.gov/preview/image"
-RECORDER_API = "https://publicapi.recorder.maricopa.gov"
+PNG_API       = "https://publicapi.recorder.maricopa.gov/preview/image"
+RECORDER_API  = "https://publicapi.recorder.maricopa.gov"
 ASSESSOR_BASE = "https://mcassessor.maricopa.gov"
 PORTAL_BASE   = "https://recorder.maricopa.gov"
 
@@ -36,7 +35,19 @@ REQUEST_DELAY = 0.3
 TIMEOUT       = 20
 MAX_RETRIES   = 2
 
-SUFFIXES = {"JR","SR","II","III","IV","TRUST","LLC","CORP","INC","LP","LLP","ET","AL"}
+# Keywords that identify a name as a COMPANY not a person
+COMPANY_KEYWORDS = {
+    "LLC", "INC", "CORP", "CORPORATION", "LLP", "LP", "TRUST", "NA",
+    "BANK", "FINANCIAL", "MORTGAGE", "LOAN", "SERVICING", "TITLE",
+    "INSURANCE", "REALTY", "INVESTMENT", "CAPITAL", "FUND", "PARTNERS",
+    "ASSOCIATION", "FEDERAL", "NATIONAL", "SECRETARY", "DEPARTMENT",
+    "HOUSING", "URBAN", "DEVELOPMENT", "QUICKEN", "ROCKET", "FREEDOM",
+    "NEWREZ", "SHELLPOINT", "TRUSTEE", "CORPS", "COMPANY", "CO",
+    "SERVICES", "SERVICE", "GROUP", "HOLDINGS", "VENTURES", "MANAGEMENT",
+    "RECON", "LAW", "LEGAL", "ATTORNEYS", "ZBS", "MTC", "FIRST",
+    "AMERICAN", "WELLS", "FARGO", "CHASE", "PENNYMAC", "LAKEVIEW",
+    "REGIONS", "TOBOROWSKY", "CHANOKNAT",
+}
 
 SESSION = requests.Session()
 SESSION.headers.update({
@@ -55,13 +66,13 @@ RECORDER_SESSION.headers.update({
 })
 
 
-# ── Entry point — called with await from fetch.py ──────────────────────────────
+# ── Entry point ────────────────────────────────────────────────────────────────
 async def enrich_records(records: list[dict]) -> list[dict]:
+    from playwright.async_api import async_playwright
+
     enriched = []
     total = len(records)
-    log.info(f"Enriching {total} records via PNG OCR...")
 
-    # Check pytesseract is available
     try:
         import pytesseract
         from PIL import Image
@@ -69,10 +80,10 @@ async def enrich_records(records: list[dict]) -> list[dict]:
         log.info("OCR engine ready (pytesseract)")
     except ImportError:
         ocr_available = False
-        log.warning("pytesseract not available — falling back to Assessor search only")
+        log.warning("pytesseract not available — using Assessor fallback only")
 
-    # Set up Playwright for Assessor fallback
-    from playwright.async_api import async_playwright
+    log.info(f"Enriching {total} records via PNG OCR + Assessor fallback...")
+
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(
             headless=True,
@@ -82,7 +93,6 @@ async def enrich_records(records: list[dict]) -> list[dict]:
             user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         )
         assessor_page = await ctx.new_page()
-        # Warm up assessor session
         try:
             await assessor_page.goto(f"{ASSESSOR_BASE}/", wait_until="domcontentloaded", timeout=20_000)
             await asyncio.sleep(1)
@@ -91,21 +101,28 @@ async def enrich_records(records: list[dict]) -> list[dict]:
 
         for i, rec in enumerate(records):
             try:
-                # Step 1: Get names from recorder API
+                # Step 1: Get names from recorder API and classify correctly
                 detail = _fetch_recorder_detail(rec.get("doc_num", ""))
                 if detail:
-                    rec = _assign_names(rec, detail.get("names") or [])
+                    rec = _assign_names_smart(rec, detail.get("names") or [])
 
-                # Step 2: Download PNG + OCR
+                # Step 2: PNG OCR for addresses + NTS fields
                 if ocr_available:
                     rec = _enrich_via_png_ocr(rec)
 
-                # Step 3: Assessor fallback if no address yet
+                # Step 3: Assessor fallback if no address
                 if not rec.get("prop_address"):
                     rec = await _enrich_via_assessor(rec, assessor_page)
 
+                # Step 4: Use prop as mail if no separate mail
+                if rec.get("prop_address") and not rec.get("mail_address"):
+                    rec["mail_address"] = rec["prop_address"]
+                    rec["mail_city"]    = rec["prop_city"]
+                    rec["mail_state"]   = rec["prop_state"]
+                    rec["mail_zip"]     = rec["prop_zip"]
+
                 status = "✓" if rec.get("prop_address") else "✗"
-                log.debug(f"  [{i+1}/{total}] {status} {rec.get('doc_num')} {rec.get('prop_address','no address')}")
+                log.debug(f"  [{i+1}/{total}] {status} {rec.get('doc_num')} | {rec.get('last_name','')} {rec.get('first_name','')} | {rec.get('prop_address','no address')}")
 
             except Exception as exc:
                 log.warning(f"  [{i+1}/{total}] Error {rec.get('doc_num')}: {exc}")
@@ -120,16 +137,138 @@ async def enrich_records(records: list[dict]) -> list[dict]:
     return enriched
 
 
-# ── PNG download + OCR ─────────────────────────────────────────────────────────
-def _enrich_via_png_ocr(rec: dict) -> dict:
-    doc_num   = rec.get("doc_num", "")
-    page_count = 2  # always try at least 2 pages
+# ── Smart name classification ──────────────────────────────────────────────────
+def _is_company(name: str) -> bool:
+    """Return True if this name looks like a company/entity not a person."""
+    tokens = set(name.upper().split())
+    # Has any company keyword
+    if tokens & COMPANY_KEYWORDS:
+        return True
+    # All-caps single word that's not a typical surname
+    if len(name.split()) == 1 and name.isupper():
+        return True
+    return False
 
+
+def _assign_names_smart(rec: dict, names: list) -> dict:
+    """
+    Names[] is alphabetical. Classify each as person or company.
+    Borrowers = person names. Trustees/Lenders = company names.
+    """
+    if not names:
+        return rec
+
+    persons   = [n for n in names if not _is_company(n)]
+    companies = [n for n in names if _is_company(n)]
+
+    # Assign trustee = first company that looks like a trustee/servicer
+    trustee_keywords = {"TRUSTEE", "RECON", "FINANCIAL", "MORTGAGE", "TITLE", "MTC", "FIRST"}
+    trustee = None
+    for c in companies:
+        if set(c.upper().split()) & trustee_keywords:
+            trustee = c
+            break
+    if not trustee and companies:
+        trustee = companies[0]
+    rec["trustee_name"] = trustee
+
+    # Primary borrower = first person name
+    if persons:
+        owner_raw = persons[0]
+        rec["owner"] = owner_raw
+
+        # Check for couple format: "LASTNAME FIRSTNAME AND LASTNAME2 FIRSTNAME2"
+        # or "LASTNAME FIRSTNAME AND FIRSTNAME2" (same last name)
+        and_split = re.split(r"\s+AND\s+", owner_raw, maxsplit=1, flags=re.I)
+
+        p1 = _parse_person_name(and_split[0].strip())
+        rec["first_name"] = p1["first"]
+        rec["last_name"]  = p1["last"]
+
+        # Second borrower
+        rec["first_name_2"] = ""
+        rec["last_name_2"]  = ""
+
+        if len(and_split) > 1:
+            # Remove trailing relationship words: "HUSBAND AND WIFE", "WIFE AND HUSBAND"
+            p2_raw = re.sub(r"\s*,?\s*(?:HUSBAND|WIFE|MARRIED|UNMARRIED|A SINGLE|WOMAN|MAN)\b.*$",
+                            "", and_split[1], flags=re.I).strip()
+            if p2_raw:
+                p2 = _parse_person_name(p2_raw)
+                # If no last name parsed, use same as p1
+                if not p2["last"]:
+                    p2["last"] = p1["last"]
+                rec["first_name_2"] = p2["first"]
+                rec["last_name_2"]  = p2["last"]
+        elif len(persons) > 1:
+            # Second person is a separate entry
+            p2_raw = re.sub(r"\s*,?\s*(?:HUSBAND|WIFE|MARRIED|UNMARRIED)\b.*$",
+                            "", persons[1], flags=re.I).strip()
+            p2 = _parse_person_name(p2_raw)
+            rec["first_name_2"] = p2["first"]
+            rec["last_name_2"]  = p2["last"]
+    else:
+        # All entities — use first company as "owner" display name
+        rec["owner"]        = companies[0] if companies else ""
+        rec["first_name"]   = ""
+        rec["last_name"]    = _clean_company_name(companies[0]) if companies else ""
+        rec["first_name_2"] = ""
+        rec["last_name_2"]  = ""
+
+    # Grantee = lender (second company, or first if no trustee)
+    lenders = [c for c in companies if c != trustee]
+    rec["grantee"] = lenders[0] if lenders else (companies[1] if len(companies) > 1 else "")
+
+    return rec
+
+
+def _parse_person_name(raw: str) -> dict:
+    """
+    Parse person name in LASTNAME FIRSTNAME [MIDDLE] format.
+    Also handles FIRSTNAME LASTNAME if it looks more natural.
+    Strips relationship descriptors.
+    """
+    # Remove relationship words
+    raw = re.sub(
+        r"\s*,?\s*\b(?:HUSBAND|WIFE|MARRIED|UNMARRIED|A SINGLE|WOMAN|MAN|TRUSTEE|AN?)\b.*$",
+        "", raw, flags=re.I
+    ).strip().strip(",").strip()
+
+    if not raw:
+        return {"first": "", "last": ""}
+
+    tokens = raw.split()
+    if not tokens:
+        return {"first": "", "last": ""}
+
+    # Single token
+    if len(tokens) == 1:
+        return {"first": "", "last": tokens[0].title()}
+
+    # LASTNAME FIRSTNAME [MIDDLE] format (recorder convention)
+    last  = tokens[0].title()
+    first = " ".join(tokens[1:]).title()
+
+    # Sanity check: if last looks like a first name (e.g. short, common first name)
+    # and first looks like a last name, don't swap — trust recorder convention
+    return {"first": first, "last": last}
+
+
+def _clean_company_name(name: str) -> str:
+    """Title-case a company name for display."""
+    return " ".join(w.capitalize() if w not in ("LLC","INC","LP","LLP","NA","DBA") else w
+                    for w in name.split())
+
+
+# ── PNG OCR ────────────────────────────────────────────────────────────────────
+def _enrich_via_png_ocr(rec: dict) -> dict:
+    doc_num = rec.get("doc_num", "")
     all_text = ""
-    for page_num in range(1, page_count + 1):
-        png_bytes = _download_png(doc_num, page_num)
-        if png_bytes:
-            text = _ocr_image(png_bytes)
+
+    for page_num in range(1, 3):
+        png = _download_png(doc_num, page_num)
+        if png:
+            text = _ocr_image(png)
             if text:
                 all_text += f"\n--- PAGE {page_num} ---\n" + text
         time.sleep(0.2)
@@ -137,12 +276,10 @@ def _enrich_via_png_ocr(rec: dict) -> dict:
     if not all_text.strip():
         return rec
 
-    log.debug(f"  {doc_num} OCR text snippet: {all_text[:200]}")
-    rec = _parse_and_merge(rec, all_text)
-    return rec
+    return _parse_ocr_fields(rec, all_text)
 
 
-def _download_png(doc_num: str, page_num: int = 1) -> Optional[bytes]:
+def _download_png(doc_num: str, page_num: int) -> Optional[bytes]:
     params = {
         "recordingNumber": doc_num,
         "suffix":          "",
@@ -152,11 +289,10 @@ def _download_png(doc_num: str, page_num: int = 1) -> Optional[bytes]:
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             resp = SESSION.get(PNG_API, params=params, timeout=TIMEOUT)
-            if resp.ok and resp.headers.get("content-type", "").startswith("image"):
+            if resp.ok and "image" in resp.headers.get("content-type", ""):
                 return resp.content
-            log.debug(f"  PNG {doc_num} p{page_num}: HTTP {resp.status_code}")
         except Exception as exc:
-            log.debug(f"  PNG download attempt {attempt}: {exc}")
+            log.debug(f"  PNG {doc_num} p{page_num} attempt {attempt}: {exc}")
         time.sleep(2 * attempt)
     return None
 
@@ -165,23 +301,25 @@ def _ocr_image(png_bytes: bytes) -> str:
     import pytesseract
     from PIL import Image, ImageFilter, ImageEnhance
     img = Image.open(io.BytesIO(png_bytes)).convert("L")
-    # Enhance contrast for better OCR
     img = ImageEnhance.Contrast(img).enhance(2.0)
     img = img.filter(ImageFilter.SHARPEN)
-    return pytesseract.image_to_string(img, config="--psm 6")
+    return pytesseract.image_to_string(img, config="--psm 6 --oem 3")
 
 
-# ── Parse OCR text → extract all NTS fields ────────────────────────────────────
-def _parse_and_merge(rec: dict, text: str) -> dict:
-    """Extract every useful field from the full OCR text."""
+def _parse_ocr_fields(rec: dict, text: str) -> dict:
+    """Extract all fields from full OCR text of NTS document."""
 
     # ── Property address ───────────────────────────────────────────────────
     if not rec.get("prop_address"):
+        # NTS documents describe the property in legal section
+        # Patterns ordered by reliability
         for pat in [
-            r"(?:property|premises|trust\s+property)\s+(?:is\s+)?(?:located\s+at|known\s+as|described\s+as)[:\s]+([^\n]{10,80})",
-            r"(?:street\s+address|situs\s+address)[:\s]+([^\n]{10,80})",
-            # Common NTS format: address line followed by City, AZ XXXXX
-            r"(\d{2,5}\s+[NSEW]?\s*\w[\w\s\.#]{5,50}(?:ST|AVE|DR|RD|LN|WAY|BLVD|CT|PL|LOOP|TRL|CIR)\b[^\n]{0,30})\n\s*(\w[\w\s]+,\s*AZ\s+\d{5})",
+            # "property located at 123 Main St, Phoenix, AZ 85001"
+            r"(?:property|premises|trust\s+property)\s+(?:is\s+)?(?:located\s+at|known\s+as|described\s+as|situate[d]?\s+at)[:\s]+([^\n]{10,100})",
+            # "Situs: 123 Main..."
+            r"[Ss]itus[:\s]+([^\n]{10,80})",
+            # Street number + direction + name + type + city, AZ zip
+            r"(\d{3,5}\s+[NSEW]\.?\s+[\w\s\.#]{5,40}(?:ST|AVE|DR|RD|LN|WAY|BLVD|CT|PL|LOOP|TRL|CIR|PKWY)\b[^\n]{0,30})\n\s*([\w\s]+,\s*AZ\s+\d{5})",
         ]:
             m = re.search(pat, text, re.I)
             if m:
@@ -196,18 +334,18 @@ def _parse_and_merge(rec: dict, text: str) -> dict:
                     rec["prop_zip"]     = addr["zip"]
                     break
 
-    # ── Mailing address (trustor/grantor address block) ────────────────────
+    # ── Mailing / trustor address ──────────────────────────────────────────
     if not rec.get("mail_address"):
         for pat in [
-            r"[Ww]hen\s+recorded[,\s]+(?:return\s+to|mail\s+to)[:\s]*\n?((?:[^\n]+\n){1,4})",
-            r"[Tt]rustor[:\s]+([A-Z][^\n]{5,60})\n([^\n]{5,80}\d{5})",
+            r"[Ww]hen\s+recorded[,\s]+(?:return\s+to|mail\s+to)[:\s]*\n((?:[^\n]+\n){1,5})",
+            r"[Mm]ail(?:ing)?\s+[Aa]ddress[:\s]+([^\n]{10,100})",
         ]:
             m = re.search(pat, text, re.I)
             if m:
-                block = m.group(0)
-                # Find an address line in the block
+                block = m.group(1) if m.lastindex else m.group(0)
                 addr_m = re.search(
-                    r"(\d{2,5}\s+[^\n,]{5,60},\s*[A-Za-z\s]+,?\s*(?:AZ)?\s*\d{5})", block
+                    r"(\d{2,5}\s+[^\n,]{5,60},\s*[A-Za-z\s]+,?\s*(?:AZ|[A-Z]{2})?\s*\d{5})",
+                    block
                 )
                 if addr_m:
                     addr = _parse_addr(addr_m.group(1))
@@ -218,14 +356,41 @@ def _parse_and_merge(rec: dict, text: str) -> dict:
                         rec["mail_zip"]     = addr["zip"]
                         break
 
-    # ── Trustee name ───────────────────────────────────────────────────────
-    if not rec.get("trustee_name"):
-        m = re.search(
-            r"(?:Substitute\s+)?[Tt]rustee[:\s]+([A-Z][A-Za-z0-9\s,\.&]{3,80}?)(?:\n|Phone|Tel|\(|\d{3})",
-            text
-        )
-        if m:
-            rec["trustee_name"] = m.group(1).strip()[:100]
+    # ── Original loan amount ───────────────────────────────────────────────
+    if not rec.get("amount"):
+        for pat in [
+            r"[Oo]riginal\s+(?:principal\s+)?(?:sum|balance|note|loan|amount)[:\s]+\$?\s*([\d,]+(?:\.\d{2})?)",
+            r"[Uu]npaid\s+(?:principal\s+)?[Bb]alance[:\s]+\$?\s*([\d,]+(?:\.\d{2})?)",
+            r"(?:principal\s+)?[Aa]mount\s+(?:of\s+)?(?:the\s+)?[Nn]ote[:\s]+\$?\s*([\d,]+(?:\.\d{2})?)",
+            # Dollar amount near "trust deed" context
+            r"\$\s*([\d,]{5,12}(?:\.\d{2})?)\s*(?:with|at|per|,)",
+        ]:
+            m = re.search(pat, text, re.I)
+            if m:
+                try:
+                    val = float(m.group(1).replace(",", "").replace(" ", ""))
+                    if 10_000 < val < 50_000_000:   # sanity range
+                        rec["amount"] = val
+                        break
+                except ValueError:
+                    pass
+
+    # ── Auction / sale date ────────────────────────────────────────────────
+    if not rec.get("auction_date"):
+        for pat in [
+            r"[Ss]ale\s+[Dd]ate[:\s]+(\w+\s+\d{1,2},?\s+\d{4})",
+            r"[Aa]uction\s+[Dd]ate[:\s]+(\w+\s+\d{1,2},?\s+\d{4})",
+            r"(?:will\s+be\s+sold|will\s+occur)[^.]{0,80}?(\w+\s+\d{1,2},\s*\d{4})",
+            r"(?:at|on)\s+(\w+\s+\d{1,2},\s+\d{4})\s+at\s+\d+[:\d]*\s*[AaPp][Mm]",
+            r"on\s+(\w+\s+\d{1,2},\s+\d{4})[,;]",
+        ]:
+            m = re.search(pat, text, re.I)
+            if m:
+                d = _norm_date(m.group(1).strip())
+                # Validate it's a future or recent date
+                if re.match(r"\d{4}-\d{2}-\d{2}", d):
+                    rec["auction_date"] = d
+                    break
 
     # ── Trustee phone ──────────────────────────────────────────────────────
     if not rec.get("trustee_phone"):
@@ -233,55 +398,16 @@ def _parse_and_merge(rec: dict, text: str) -> dict:
         if m:
             rec["trustee_phone"] = m.group(0).strip()
 
-    # ── Auction date ───────────────────────────────────────────────────────
-    if not rec.get("auction_date"):
-        for pat in [
-            r"[Ss]ale\s+[Dd]ate[:\s]+(\w+\s+\d{1,2},?\s+\d{4})",
-            r"[Aa]uction\s+[Dd]ate[:\s]+(\w+\s+\d{1,2},?\s+\d{4})",
-            r"will\s+(?:be\s+sold|occur)[^.]{0,60}?(\w+\s+\d{1,2},\s*\d{4})",
-            r"(?:at|on)\s+(\w+\s+\d{1,2},\s+\d{4})(?:\s*at\s+\d)",
-        ]:
-            m = re.search(pat, text, re.I)
-            if m:
-                rec["auction_date"] = _norm_date(m.group(1).strip())
-                break
-
-    # ── Original loan amount ───────────────────────────────────────────────
-    if not rec.get("amount"):
-        m = re.search(
-            r"[Oo]riginal\s+(?:[Ll]oan|[Nn]ote|[Pp]rincipal)[:\s]+\$?([\d,]+(?:\.\d{2})?)",
-            text
-        )
-        if m:
-            try:
-                rec["amount"] = float(m.group(1).replace(",", ""))
-            except ValueError:
-                pass
-
-    # ── Owner/trustor name (if not already set) ────────────────────────────
-    if not rec.get("last_name"):
-        m = re.search(
-            r"[Tt]rustor[:\s]+([A-Z][A-Z\s,/\.]{3,60}?)(?:\n|,\s*a\s|\()",
-            text
-        )
-        if m:
-            name_raw = m.group(1).strip().rstrip(",")
-            if not rec.get("owner"):
-                rec["owner"] = name_raw
-            parsed = _parse_name(name_raw)
-            rec["first_name"] = parsed["first"]
-            rec["last_name"]  = parsed["last"]
-
-    # ── Deed of trust number ───────────────────────────────────────────────
+    # ── Parcel / APN ───────────────────────────────────────────────────────
     if not rec.get("parcel"):
-        m = re.search(r"(?:APN|[Pp]arcel)[:\s#]+(\d{3}[-\s]\d{2}[-\s]\d{3})", text)
+        m = re.search(r"(?:APN|[Pp]arcel\s*(?:[Nn]o|#|[Nn]umber)?)[:\s#]*(\d{3}[-\s]\d{2}[-\s]\d{3})", text)
         if m:
             rec["parcel"] = m.group(1).replace(" ", "-")
 
     return rec
 
 
-# ── Assessor fallback (confirmed working from live testing) ────────────────────
+# ── Assessor fallback ──────────────────────────────────────────────────────────
 async def _enrich_via_assessor(rec: dict, page) -> dict:
     query = _build_query(rec)
     if not query:
@@ -326,7 +452,7 @@ async def _assessor_name_search(page, query: str) -> tuple:
             await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
             try:
                 await page.wait_for_function(
-                    "() => { const r = document.querySelectorAll('table tbody tr td'); return r.length > 0 && r[0].innerText.trim() !== ''; }",
+                    "() => { const r=document.querySelectorAll('table tbody tr td'); return r.length>0 && r[0].innerText.trim()!=''; }",
                     timeout=12_000,
                 )
             except Exception:
@@ -335,9 +461,9 @@ async def _assessor_name_search(page, query: str) -> tuple:
             result = await page.evaluate("""
                 () => {
                     for (const row of document.querySelectorAll('table tbody tr')) {
-                        const cells = Array.from(row.querySelectorAll('td')).map(td => td.innerText.trim());
-                        if (cells.length >= 3 && /^\\d{3}-\\d{2}-\\d{3}/.test(cells[0]))
-                            return { apn: cells[0], address: cells[2] || '' };
+                        const cells=Array.from(row.querySelectorAll('td')).map(td=>td.innerText.trim());
+                        if (cells.length>=3 && /^\\d{3}-\\d{2}-\\d{3}/.test(cells[0]))
+                            return {apn:cells[0], address:cells[2]||''};
                     }
                     return null;
                 }
@@ -360,7 +486,7 @@ async def _assessor_apn_detail(page, apn: str) -> tuple:
         await page.goto(f"{ASSESSOR_BASE}/mcs/?q={apn_digits}", wait_until="domcontentloaded", timeout=30_000)
         try:
             await page.wait_for_function(
-                "() => document.body.innerText.includes('PROPERTY INFORMATION') || document.body.innerText.includes('Mailing Address')",
+                "() => document.body.innerText.includes('PROPERTY INFORMATION')||document.body.innerText.includes('Mailing Address')",
                 timeout=12_000,
             )
         except Exception:
@@ -375,14 +501,7 @@ async def _assessor_apn_detail(page, apn: str) -> tuple:
         return None, None
 
 
-def _extract_from_text(pattern: str, text: str) -> Optional[dict]:
-    m = re.search(pattern, text)
-    if m:
-        return _parse_addr(m.group(1).strip())
-    return None
-
-
-# ── Recorder detail API ────────────────────────────────────────────────────────
+# ── Recorder API ───────────────────────────────────────────────────────────────
 def _fetch_recorder_detail(doc_num: str) -> Optional[dict]:
     if not doc_num:
         return None
@@ -395,82 +514,62 @@ def _fetch_recorder_detail(doc_num: str) -> Optional[dict]:
     return None
 
 
-# ── Shared utilities ───────────────────────────────────────────────────────────
+# ── Utilities ──────────────────────────────────────────────────────────────────
 def _parse_addr(raw: str) -> Optional[dict]:
     if not raw or not raw.strip():
         return None
-    raw = raw.strip()
+    raw = " ".join(raw.split()).strip()
+
     # "123 Main St, Phoenix, AZ 85001" or "123 Main St, Phoenix, 85001"
     m = re.match(r"^(.+?),\s*([A-Za-z\s]+?),\s*(?:([A-Z]{2})\s+)?(\d{5}(?:-\d{4})?)$", raw)
     if m:
-        return {"street": m.group(1).strip().title(), "city": m.group(2).strip().title(),
-                "state": (m.group(3) or "AZ").strip(), "zip": m.group(4).strip()}
+        return {"street": m.group(1).strip().title(),
+                "city":   m.group(2).strip().title(),
+                "state":  (m.group(3) or "AZ").strip(),
+                "zip":    m.group(4).strip()}
+
     # "123 Main St Phoenix, AZ 85001"
     m2 = re.match(r"^(\d+\s+.+?)\s+([A-Z][A-Za-z\s]+?),\s*([A-Z]{2})\s+(\d{5})$", raw)
     if m2:
-        return {"street": m2.group(1).strip().title(), "city": m2.group(2).strip().title(),
-                "state": m2.group(3).strip(), "zip": m2.group(4).strip()}
+        return {"street": m2.group(1).strip().title(),
+                "city":   m2.group(2).strip().title(),
+                "state":  m2.group(3).strip(),
+                "zip":    m2.group(4).strip()}
+
+    # Fallback
     zip_m = re.search(r"(\d{5})", raw)
     parts = raw.split(",")
     if zip_m and parts:
         return {"street": parts[0].strip().title(),
-                "city": parts[1].strip().title() if len(parts) > 1 else "",
-                "state": "AZ", "zip": zip_m.group(1)}
+                "city":   parts[1].strip().title() if len(parts) > 1 else "",
+                "state":  "AZ", "zip": zip_m.group(1)}
     return None
+
+
+def _extract_from_text(pattern: str, text: str) -> Optional[dict]:
+    m = re.search(pattern, text)
+    return _parse_addr(m.group(1).strip()) if m else None
 
 
 def _norm_date(raw: str) -> str:
     from datetime import datetime
+    raw = raw.strip()
     for fmt in ("%B %d, %Y", "%b %d, %Y", "%B %d %Y", "%m/%d/%Y", "%m-%d-%Y"):
         try:
-            return datetime.strptime(raw.strip(), fmt).strftime("%Y-%m-%d")
+            return datetime.strptime(raw, fmt).strftime("%Y-%m-%d")
         except ValueError:
             continue
-    return raw.strip()
-
-
-def _assign_names(rec: dict, names: list) -> dict:
-    if not names:
-        return rec
-    if rec.get("lead_key") == "NS":
-        rec["trustee_name"] = names[0] if names else None
-        rec["owner"]        = names[-1] if len(names) >= 2 else names[0]
-        rec["grantee"]      = names[1] if len(names) >= 2 else ""
-    else:
-        rec["owner"]   = names[0] if names else ""
-        rec["grantee"] = names[1] if len(names) > 1 else ""
-    parsed = _parse_name(rec.get("owner", ""))
-    rec["first_name"]   = parsed["first"]
-    rec["last_name"]    = parsed["last"]
-    rec["first_name_2"] = ""
-    rec["last_name_2"]  = ""
-    owner = rec.get("owner", "")
-    if "/" in owner:
-        p2 = _parse_name(owner.split("/", 1)[1].strip())
-        rec["first_name_2"] = p2["first"]
-        rec["last_name_2"]  = p2["last"]
-    return rec
+    return raw
 
 
 def _build_query(rec: dict) -> Optional[str]:
     last  = (rec.get("last_name")  or "").strip()
     first = (rec.get("first_name") or "").strip()
-    if last and first:
+    # Skip if last name is actually a company
+    if last and not _is_company(last) and first and not _is_company(first):
         return f"{last} {first}"
     owner = (rec.get("owner") or "").strip()
-    if owner:
-        cleaned = re.sub(r"\b(LLC|CORP|INC|TRUST|LP|LLP|ET\s+AL|ETAL)\b", "", owner, flags=re.I)
-        cleaned = re.sub(r"[/].*", "", cleaned).strip(" ,")
+    if owner and not _is_company(owner):
+        cleaned = re.sub(r"\s+AND\s+.*$", "", owner, flags=re.I).strip()
         return cleaned[:60] if cleaned else None
     return None
-
-
-def _parse_name(raw: str) -> dict:
-    tokens = raw.upper().split()
-    while tokens and tokens[-1] in SUFFIXES:
-        tokens.pop()
-    if not tokens:
-        return {"first": "", "last": ""}
-    if len(tokens) == 1:
-        return {"first": "", "last": tokens[0].title()}
-    return {"last": tokens[0].title(), "first": " ".join(tokens[1:]).title()}
