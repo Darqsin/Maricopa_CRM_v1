@@ -465,3 +465,36 @@ Call log:
 2026-04-11 09:35:32,035 [INFO] exporter — GHL CSV → data/ghl_export.csv (65 rows)
 2026-04-11 09:35:32,035 [INFO] fetch — GHL CSV → data/ghl_export.csv
 2026-04-11 09:35:32,035 [INFO] fetch — Run complete | total=65 | with_addr=23 | top_score=72
+2026-04-11 17:07:44,590 [INFO] fetch — Run started | lookback=1d | 2026-04-10 → 2026-04-11
+2026-04-11 17:07:44,793 [INFO] clerk_scraper — Session warmed up via portal
+2026-04-11 17:07:44,793 [INFO] clerk_scraper — Scraping NS (Notice of Trustee Sale)
+2026-04-11 17:07:45,163 [INFO] clerk_scraper —   Page 1: 16 rows (total=16)
+2026-04-11 17:07:45,179 [INFO] clerk_scraper —   → 16 records for NS
+2026-04-11 17:07:45,679 [INFO] clerk_scraper — Scraping FL (Federal Tax Lien)
+2026-04-11 17:07:45,830 [INFO] clerk_scraper —   Page 1: 0 rows (total=0)
+2026-04-11 17:07:45,830 [INFO] clerk_scraper —   → 0 records for FL
+2026-04-11 17:07:46,330 [INFO] clerk_scraper — Scraping SL (State Tax Lien)
+2026-04-11 17:07:46,480 [INFO] clerk_scraper —   Page 1: 20 rows (total=20)
+2026-04-11 17:07:46,481 [INFO] clerk_scraper —   → 20 records for SL
+2026-04-11 17:07:46,981 [INFO] clerk_scraper — Scraping DE (Tax Deed)
+2026-04-11 17:07:47,132 [INFO] clerk_scraper —   Page 1: 2 rows (total=2)
+2026-04-11 17:07:47,132 [INFO] clerk_scraper —   → 2 records for DE
+2026-04-11 17:07:47,633 [INFO] clerk_scraper — Scraping PD (Probate Document)
+2026-04-11 17:07:47,782 [INFO] clerk_scraper —   Page 1: 5 rows (total=5)
+2026-04-11 17:07:47,783 [INFO] clerk_scraper —   → 5 records for PD
+2026-04-11 17:07:48,283 [INFO] clerk_scraper — Scraping PJ (Probate Document)
+2026-04-11 17:07:48,431 [INFO] clerk_scraper —   Page 1: 22 rows (total=22)
+2026-04-11 17:07:48,432 [INFO] clerk_scraper —   → 22 records for PJ
+2026-04-11 17:07:48,932 [INFO] clerk_scraper — Total records: 65
+2026-04-11 17:07:48,932 [INFO] fetch — Clerk scrape complete — 65 raw records
+2026-04-11 17:07:48,975 [INFO] enricher — OCR engine ready (pytesseract)
+2026-04-11 17:07:48,976 [INFO] enricher — Enriching 65 records via PNG OCR + Assessor fallback...
+2026-04-11 17:16:17,573 [INFO] enricher — Enrichment done: 17/65 addresses (26%)
+2026-04-11 17:16:17,573 [INFO] fetch — Enrichment complete — 65 records
+2026-04-11 17:16:17,576 [INFO] exporter — JSON saved → dashboard/records.json (65 records)
+2026-04-11 17:16:17,576 [INFO] fetch — Saved → dashboard/records.json
+2026-04-11 17:16:17,577 [INFO] exporter — JSON saved → data/records.json (65 records)
+2026-04-11 17:16:17,578 [INFO] fetch — Saved → data/records.json
+2026-04-11 17:16:17,578 [INFO] exporter — GHL CSV → data/ghl_export.csv (65 rows)
+2026-04-11 17:16:17,578 [INFO] fetch — GHL CSV → data/ghl_export.csv
+2026-04-11 17:16:17,578 [INFO] fetch — Run complete | total=65 | with_addr=17 | top_score=70
