@@ -1,6 +1,10 @@
 """
-scraper/exporter.py
-Handles all output: JSON saves and GHL CSV export.
+scraper/exporter.py — JSON + GHL CSV output
+
+GHL CSV columns (updated):
+  - Added: First Name 2, Last Name 2
+  - Removed: Lead Type
+  - Cleaned: Original Loan (no trailing spaces)
 """
 
 import csv
@@ -14,6 +18,8 @@ log = logging.getLogger("exporter")
 GHL_COLUMNS = [
     "First Name",
     "Last Name",
+    "First Name 2",
+    "Last Name 2",
     "Mailing Address",
     "Mailing City",
     "Mailing State",
@@ -22,7 +28,6 @@ GHL_COLUMNS = [
     "Property City",
     "Property State",
     "Property Zip",
-    "Lead Type",
     "Document Type",
     "Date Filed",
     "Document Number",
@@ -62,53 +67,34 @@ def export_ghl_csv(records: list[dict], path: Path) -> None:
 
 
 def _rec_to_ghl_row(rec: dict) -> dict:
-    lead_type_labels = {
-        "NS": "Notice of Trustee Sale",
-        "FL": "Federal Tax Lien",
-        "SL": "State Tax Lien",
-        "DE": "Tax Deed",
-        "PD": "Probate Document",
-        "PJ": "Probate Document",
-    }
-
-    first = rec.get("first_name") or _first_from_owner(rec.get("owner", ""))
-    last  = rec.get("last_name")  or _last_from_owner(rec.get("owner", ""))
-
     amount = rec.get("amount")
-    loan_str = f"${float(amount):,.2f}" if amount else ""
+    if amount:
+        try:
+            loan_str = f"${float(amount):,.2f}"
+        except (ValueError, TypeError):
+            loan_str = str(amount).strip()
+    else:
+        loan_str = ""
 
     return {
-        "First Name":       first,
-        "Last Name":        last,
-        "Mailing Address":  rec.get("mail_address") or "",
-        "Mailing City":     rec.get("mail_city")    or "",
-        "Mailing State":    rec.get("mail_state")   or "",
-        "Mailing Zip":      rec.get("mail_zip")     or "",
-        "Property Address": rec.get("prop_address") or "",
-        "Property City":    rec.get("prop_city")    or "",
-        "Property State":   rec.get("prop_state")   or "AZ",
-        "Property Zip":     rec.get("prop_zip")     or "",
-        "Lead Type":        lead_type_labels.get(rec.get("lead_key", ""), rec.get("cat_label", "")),
-        "Document Type":    rec.get("doc_type")     or "",
-        "Date Filed":       rec.get("filed")        or "",
-        "Document Number":  rec.get("doc_num")      or "",
+        "First Name":       (rec.get("first_name")   or "").strip(),
+        "Last Name":        (rec.get("last_name")    or "").strip(),
+        "First Name 2":     (rec.get("first_name_2") or "").strip(),
+        "Last Name 2":      (rec.get("last_name_2")  or "").strip(),
+        "Mailing Address":  (rec.get("mail_address") or "").strip(),
+        "Mailing City":     (rec.get("mail_city")    or "").strip(),
+        "Mailing State":    (rec.get("mail_state")   or "").strip(),
+        "Mailing Zip":      (rec.get("mail_zip")     or "").strip(),
+        "Property Address": (rec.get("prop_address") or "").strip(),
+        "Property City":    (rec.get("prop_city")    or "").strip(),
+        "Property State":   (rec.get("prop_state")   or "AZ").strip(),
+        "Property Zip":     (rec.get("prop_zip")     or "").strip(),
+        "Document Type":    (rec.get("doc_type")     or "N/TR SALE").strip(),
+        "Date Filed":       (rec.get("filed")        or "").strip(),
+        "Document Number":  (rec.get("doc_num")      or "").strip(),
         "Original Loan":    loan_str,
-        "Trustee Name":     rec.get("trustee_name")  or "",
-        "Trustee Phone":    rec.get("trustee_phone") or "",
-        "Auction Date":     rec.get("auction_date")  or "",
-        "PDF URL":          rec.get("pdf_url")       or "",
+        "Trustee Name":     (rec.get("trustee_name")  or "").strip(),
+        "Trustee Phone":    (rec.get("trustee_phone") or "").strip(),
+        "Auction Date":     (rec.get("auction_date")  or "").strip(),
+        "PDF URL":          (rec.get("pdf_url")       or "").strip(),
     }
-
-
-def _first_from_owner(owner: str) -> str:
-    parts = owner.strip().split()
-    if len(parts) >= 2:
-        return parts[1].title()
-    return ""
-
-
-def _last_from_owner(owner: str) -> str:
-    parts = owner.strip().split()
-    if parts:
-        return parts[0].title()
-    return ""
