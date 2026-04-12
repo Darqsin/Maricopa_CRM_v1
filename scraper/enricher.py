@@ -1,15 +1,15 @@
 """
-scraper/enricher.py  v11
+scraper/enricher.py  v12
 
-Fixes:
-1. Address parser: city must not contain street types (St, Ave, Dr, etc.)
-2. "Is purported to be:" prefix stripped from property address
-3. Auction date: handles "JULY 7" / "JULY 7," / handwritten month+day
-4. Trustee: "Name and Address of Trustee" label takes absolute priority
-   Beneficiary label excluded — lender != trustee
-5. 2nd owner: populated from both OCR and recorder API names
-6. Loan amount trailing spaces stripped
-7. Mailing: only captured when clearly a person's address
+Key fixes:
+1. COURTHOUSE ADDRESS blocked: "201 W Jefferson" / "201 West Jefferson" never used as property
+2. PURPORTED STREET ADDRESS: keyword added (high priority for property)
+3. "Phoenix, Arizona" / "Phoenix, Arizo" OCR artifacts fixed in address parser
+4. Auction date: require year >= current year (no old dates from deed/trust references)
+5. Trustee: deduplicate "Prime Recon LLC Prime Recon LLC"
+6. 2nd owner: populated from BOTH OCR "Name and Address of Trustor" AND recorder API
+7. Mailing: "When recorded mail to:" recipient must be a person, not company
+8. OCR artifacts like "17 3707..." cleaned from street numbers
 """
 
 import asyncio
@@ -17,6 +17,7 @@ import io
 import logging
 import re
 import time
+from datetime import datetime
 from typing import Optional
 
 import requests
@@ -32,12 +33,28 @@ REQUEST_DELAY = 0.3
 TIMEOUT       = 20
 MAX_RETRIES   = 2
 
-# Street type suffixes — if these appear in a city field it's wrong
+# Courthouse / court building addresses — never use as property address
+COURTHOUSE_PATTERNS = [
+    r"201\s+W(?:est)?\.?\s+Jefferson",
+    r"Superior\s+Court\s+Building",
+    r"Maricopa\s+County\s+Courthouse",
+    r"Superior\s+Building",
+    r"Maricopa\s+County\s+Court",
+]
+COURTHOUSE_RE = re.compile("|".join(COURTHOUSE_PATTERNS), re.I)
+
+# US state abbreviations (2-letter) — for state field validation
+US_STATES = {
+    "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN",
+    "IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV",
+    "NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN",
+    "TX","UT","VT","VA","WA","WV","WI","WY","DC",
+}
+
 STREET_TYPES = {
     "ST","STREET","AVE","AVENUE","DR","DRIVE","RD","ROAD","LN","LANE",
     "WAY","BLVD","BOULEVARD","CT","COURT","PL","PLACE","LOOP","TRL",
-    "TRAIL","CIR","CIRCLE","PKWY","PARKWAY","HWY","HIGHWAY","FWY",
-    "FREEWAY","EXPY","EXPRESSWAY","PI","PLACE",
+    "TRAIL","CIR","CIRCLE","PKWY","PARKWAY","HWY","FREEWAY","EXPY","PI",
 }
 
 COMPANY_WORDS = {
@@ -50,9 +67,12 @@ COMPANY_WORDS = {
     "HOLDINGS","VENTURES","MANAGEMENT","RECON","LAW","LEGAL","ATTORNEYS",
     "ZBS","MTC","FIRST","AMERICAN","WELLS","FARGO","CHASE","PENNYMAC",
     "LAKEVIEW","REGIONS","OFFICES","OFFICE","HUD","LIMITED","LIABILITY",
-    "UNION","CREDIT","FEDERAL","NAVY","DESERT","MOUNTAIN","PLANET",
-    "CARRINGTON","SENECA","GUILD","QUALITY","IGLOO","SERIES",
+    "UNION","CREDIT","NAVY","DESERT","MOUNTAIN","PLANET","CARRINGTON",
+    "SENECA","GUILD","QUALITY","IGLOO","SERIES","PIONEER","CITIZENS",
+    "NOVA","CLEARWATER","CLEAR","PRIME","STATEWIDE","FORECLOSURE",
 }
+
+CURRENT_YEAR = datetime.utcnow().year
 
 SESSION = requests.Session()
 SESSION.headers.update({
@@ -64,7 +84,7 @@ SESSION.headers.update({
 
 RECORDER_SESSION = requests.Session()
 RECORDER_SESSION.headers.update({
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0",
     "Referer":    f"{PORTAL_BASE}/recording/document-search-results.html",
     "Origin":     PORTAL_BASE,
     "Accept":     "application/json",
@@ -76,7 +96,6 @@ async def enrich_records(records: list[dict]) -> list[dict]:
 
     try:
         import pytesseract
-        from PIL import Image
         ocr_ok = True
         log.info("OCR ready")
     except ImportError:
@@ -93,7 +112,7 @@ async def enrich_records(records: list[dict]) -> list[dict]:
             args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
         )
         ctx = await browser.new_context(
-            user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
         )
         assessor_page = await ctx.new_page()
         try:
@@ -116,8 +135,8 @@ async def enrich_records(records: list[dict]) -> list[dict]:
 
                 log.debug(f"  [{i+1}/{total}] {'✓' if rec.get('prop_address') else '✗'} "
                           f"{rec.get('doc_num')} | {rec.get('last_name','')} {rec.get('first_name','')} "
+                          f"| 2nd: {rec.get('last_name_2','')} {rec.get('first_name_2','')}"
                           f"| {rec.get('prop_address','no address')}")
-
             except Exception as exc:
                 log.warning(f"  [{i+1}/{total}] Error {rec.get('doc_num')}: {exc}")
 
@@ -131,9 +150,8 @@ async def enrich_records(records: list[dict]) -> list[dict]:
     return enriched
 
 
-# ── OCR pipeline ───────────────────────────────────────────────────────────────
 def _enrich_via_ocr(rec: dict) -> dict:
-    doc_num = rec.get("doc_num", "")
+    doc_num  = rec.get("doc_num", "")
     all_text = ""
     for page_num in range(1, 5):
         png = _download_png(doc_num, page_num)
@@ -173,48 +191,41 @@ def _ocr_image(png_bytes: bytes) -> str:
     return pytesseract.image_to_string(img, config="--psm 6 --oem 3")
 
 
-# ── Field extraction ───────────────────────────────────────────────────────────
 def _extract_all_fields(rec: dict, text: str) -> dict:
 
-    # ── TRUSTEE — label-first priority ────────────────────────────────────
-    # "Name and Address of Trustee" / "NAME AND ADDRESS OF TRUSTEE:"
-    # This is the only reliable trustee label — do NOT use beneficiary
-    trustee_name  = None
-    trustee_phone = None
-
+    # ── TRUSTEE ────────────────────────────────────────────────────────────
+    trustee_name = None
     for pat in [
-        # Explicit label (both PDF styles) — grab up to 2 lines, join, cut at descriptor
         r"[Nn]ame\s+and\s+[Aa]ddress\s+of\s+(?:original\s+)?[Tt]rustee[^:\n]*[:\n]\s*([^\n]{2,80}(?:\n[A-Za-z][^\n]{0,60})?)",
-        # "Substitute Trustee: NAME"
         r"[Ss]ubstitute\s+[Tt]rustee[:\s]+([^\n,]{3,80}?)(?:,|\n)",
-        # Style A: "designation of X as Foreclosure Commissioner"
         r"designation\s+of\s+([A-Z][A-Za-z\s,\.]+?)\s+as\s+(?:[Ff]oreclosure\s+)?[Cc]ommissioner",
-        # "X as Foreclosure Commissioner"
         r"([A-Z][A-Za-z\s,\.&]+?)\s+as\s+[Ff]oreclosure\s+[Cc]ommissioner",
     ]:
         m = re.search(pat, text, re.I)
         if m:
             candidate = " ".join(m.group(1).split()).strip()
-            # Cut at descriptor words after name
             cut = re.search(
-                r",?\s+(?:licensed|real\s+estate|broker|dba\s+\w|qualif|\d{3}[\-\.]|an\s+arizona|irvine|glendale|phoenix|scottsdale|tempe|mesa|chandler|gilbert|peoria|surprise|avondale|goodyear|buckeye)",
+                r",?\s+(?:licensed|real\s+estate|broker|dba\s+\w|qualif|\d{3}[\-\.]|an\s+arizona|irvine|glendale|phoenix|scottsdale|tempe|mesa|chandler|gilbert|peoria|surprise|avondale|goodyear|buckeye|ca\s+\d|az\s+\d)",
                 candidate, re.I
             )
             if cut:
                 candidate = candidate[:cut.start()].strip().rstrip(",")
-            # Reject boilerplate
             bad = {"SALE","OBJECTION","BELIEVE","DEFENSE","ACTION","COURT","FILE",
                    "LICENSED","BROKER","QUALIFICATIONS","REGULATION","AGENCY"}
             if set(candidate.upper().split()) & bad:
                 continue
             if len(candidate) > 3:
+                # Deduplicate "Prime Recon LLC Prime Recon LLC" → "Prime Recon LLC"
+                words = candidate.split()
+                half  = len(words) // 2
+                if half > 1 and words[:half] == words[half:]:
+                    candidate = " ".join(words[:half])
                 trustee_name = candidate[:100]
                 break
 
     if trustee_name:
         rec["trustee_name"] = trustee_name
 
-    # Phone — all phones found; prefer last (usually trustee, not court)
     phones = re.findall(r"\(?\d{3}\)?[\s\-\.]\d{3}[\s\-\.]\d{4}", text)
     if phones:
         rec["trustee_phone"] = phones[-1].strip()
@@ -222,33 +233,39 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
     # ── PROPERTY ADDRESS ───────────────────────────────────────────────────
     if not rec.get("prop_address"):
         for pat in [
-            # "IDENTIFIABLE LOCATION: 4037 S. 12th Street Phoenix, AZ 85040"
+            # "PURPORTED STREET ADDRESS: 11026 NORTH 28TH DRIVE UNIT 52, PHOENIX, AZ 85029"
+            r"PURPORTED\s+STREET\s+ADDRESS[:\s]+([^\n]+)",
+            # "IDENTIFIABLE LOCATION: ..."
             r"IDENTIFIABLE\s+LOCATION[:\s]+([^\n]+)",
-            # "Commonly known as: 123 Main St, City, AZ 85001"
+            # "Commonly known as: ..."
             r"[Cc]ommonly\s+known\s+as[:\s]+([^\n]+)",
-            # "The street address ... is purported to be: 3218 N 198TH LN, BUCKEYE, AZ 85326"
-            r"(?:[Ss]treet\s+address[^:]*)?(?:[Pp]urported\s+to\s+be[:\s]*|[Pp]urported\s+address[:\s]*)\s*:?\s*([^\n]{10,100})",
-            # "street address and other common designation ... is: ADDR"
-            r"street\s+address[^.]{0,80}?(?:is|be)[:\s]+([^\n]{10,100})",
+            # "The street address ... is purported to be: ADDR"
+            r"(?:[Ss]treet\s+address[^:]*)?[Pp]urported\s+to\s+be[:\s]*:?\s*([^\n]{10,100})",
+            r"[Ss]treet\s+address[^.]{0,80}?(?:is|be)[:\s]+([^\n]{10,100})",
             # "Situs:"
             r"[Ss]itus[:\s]+([^\n]+)",
-            # Two-line: number+street \n City, AZ ZIP
+            # Two-line
             r"(\d{2,5}\s+[NSEW]?\.?\s*[\w\s\.#]{4,50}(?:ST|AVE|DR|RD|LN|WAY|BLVD|CT|PL|LOOP|TRL|CIR|PKWY|STREET|AVENUE|ROAD|COURT|LANE|DRIVE)\b[^\n]{0,15})\n\s*([\w\s]+,\s*AZ\s+\d{5})",
         ]:
             m = re.search(pat, text, re.I)
-            if m:
-                raw = m.group(1).strip()
-                if m.lastindex and m.lastindex > 1:
-                    raw = raw + ", " + m.group(2).strip()
-                # Strip "Is Purported To Be:" prefix if still present
-                raw = re.sub(r"^[Ii]s\s+[Pp]urported\s+[Tt]o\s+[Bb]e[:\s]*", "", raw).strip()
-                addr = _parse_addr(raw)
-                if addr and addr.get("zip"):
-                    rec["prop_address"] = addr["street"]
-                    rec["prop_city"]    = addr["city"]
-                    rec["prop_state"]   = addr["state"] or "AZ"
-                    rec["prop_zip"]     = addr["zip"]
-                    break
+            if not m:
+                continue
+            raw = m.group(1).strip()
+            if m.lastindex and m.lastindex > 1:
+                raw = raw + ", " + m.group(2).strip()
+            raw = re.sub(r"^[Ii]s\s+[Pp]urported\s+[Tt]o\s+[Bb]e[:\s]*", "", raw).strip()
+
+            # SKIP courthouse addresses
+            if COURTHOUSE_RE.search(raw):
+                continue
+
+            addr = _parse_addr(raw)
+            if addr and addr.get("zip"):
+                rec["prop_address"] = addr["street"]
+                rec["prop_city"]    = addr["city"]
+                rec["prop_state"]   = addr["state"] or "AZ"
+                rec["prop_zip"]     = addr["zip"]
+                break
 
     # ── MAILING ADDRESS ────────────────────────────────────────────────────
     if not rec.get("mail_address"):
@@ -260,10 +277,12 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
             block = m.group(1)
             lines = [l.strip() for l in block.strip().splitlines() if l.strip()]
             first_line = lines[0] if lines else ""
-            # Only capture if first line is a person (not company) and not the trustee
             if (not _is_company(first_line) and
                     not (trustee_name and first_line.upper() in trustee_name.upper())):
                 for line in lines[1:]:
+                    # Skip lines that are just city/state/zip (no street number)
+                    if not re.search(r"^\d", line.strip()):
+                        continue
                     addr = _parse_addr(line)
                     if addr and addr.get("zip"):
                         rec["mail_address"] = addr["street"]
@@ -272,12 +291,10 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
                         rec["mail_zip"]     = addr["zip"]
                         break
 
-    # ── TRUSTOR / OWNER ────────────────────────────────────────────────────
+    # ── TRUSTOR / OWNER + 2ND OWNER ───────────────────────────────────────
     if not rec.get("last_name"):
         for pat in [
-            # Style B: "NAME AND ADDRESS OF TRUSTOR: NAME, address"
             r"[Nn]ame\s+and\s+[Aa]ddress\s+of\s+(?:original\s+)?[Tt]rustor[:\s]+([^\n]{3,150})",
-            # Style A: "executed by NAME as trustor"
             r"executed\s+by\s+([A-Z][a-zA-Z\s\.,]+?)\s*,?\s*(?:[Aa]\s+[Ss]ingle|[Aa]\s+[Mm]arried|[Hh]usband|[Ww]ife|as\s+[Tt]rustor|[Tt]rustor\b)",
             r"([A-Z][a-zA-Z\s\.,]{3,60}?)\s+as\s+[Tt]rustor",
             r"[Tt]rustor[:\s]+([A-Z][A-Za-z\s,\.]{3,80}?)(?:\n|,\s*[Aa]\s+[Ss]ingle)",
@@ -286,11 +303,9 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
         ]:
             m = re.search(pat, text, re.I)
             if m:
-                raw = " ".join(m.group(1).split()).strip().rstrip(",")
-                # For "NAME AND ADDRESS OF TRUSTOR:" — split name from embedded address
+                raw       = " ".join(m.group(1).split()).strip().rstrip(",")
                 addr_start = re.search(r",\s*\d{2,5}\s+[NSEW\d]", raw)
                 name_part  = raw[:addr_start.start()].strip().rstrip(",") if addr_start else raw.split(",")[0].strip()
-
                 rec["owner"] = name_part
                 is_co = _is_company(name_part)
 
@@ -304,14 +319,13 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
                     rec["first_name_2"] = ""
                     rec["last_name_2"]  = ""
                 else:
-                    # Split on AND for co-owners
                     rel_pat = r"\s*,?\s*\b(?:husband|wife|married|unmarried|a\s+single|woman|man|trustor|grantor|an?)\b.*$"
-                    # Strip "HUSBAND AND"/"WIFE AND" relationship connectors before splitting
+                    # Handle "HUSBAND AND" connector
                     name_clean = re.sub(r",?\s+(?:HUSBAND|WIFE)\s+AND\s+", " AND ", name_part, flags=re.I)
-                    parts   = re.split(r"\s+AND\s+", name_clean, maxsplit=1, flags=re.I)
+                    parts = re.split(r"\s+AND\s+", name_clean, maxsplit=1, flags=re.I)
 
                     p1_raw = re.sub(rel_pat, "", parts[0], flags=re.I).strip().strip(",")
-                    p1 = _parse_person_name(p1_raw)
+                    p1 = _parse_person_name(p1_raw, from_doc=True)
                     rec["first_name"]   = p1["first"]
                     rec["last_name"]    = p1["last"]
                     rec["first_name_2"] = ""
@@ -320,17 +334,17 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
                     if len(parts) > 1:
                         p2_raw = re.sub(rel_pat, "", parts[1], flags=re.I).strip().strip(",")
                         if p2_raw:
-                            p2 = _parse_person_name(p2_raw)
+                            p2 = _parse_person_name(p2_raw, from_doc=True)
                             if not p2["last"]:
                                 p2["last"] = p1["last"]
                             rec["first_name_2"] = p2["first"]
                             rec["last_name_2"]  = p2["last"]
                 break
 
-    # ── APN / PARCEL ───────────────────────────────────────────────────────
+    # ── APN ────────────────────────────────────────────────────────────────
     if not rec.get("parcel"):
         for pat in [
-            r"TAX\s+PARCEL\s+NUMBER[:\s]+([\d\-]+)",
+            r"TAX\s+PARCEL\s+NUMBER(?:\(S\))?[:\s]+([\d\-]+)",
             r"APN[:\s]*([\d]{3}[\-\s][\d]{2}[\-\s][\d]{3}[\w\s]*)",
             r"[Pp]arcel\s+(?:[Nn]o\.?|[Nn]umber|#)[:\s]*([\d]{3}[\-\s][\d]{2}[\-\s][\d]{3})",
             r"\b(\d{3}-\d{2}-\d{3}[A-Z]?)\b",
@@ -340,37 +354,29 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
                 rec["parcel"] = m.group(1).strip().split()[0].replace(" ", "-")
                 break
 
-    # ── AUCTION DATE ───────────────────────────────────────────────────────
+    # ── AUCTION DATE — require year >= current year ────────────────────────
     if not rec.get("auction_date"):
         for pat in [
-            # "July 15, 2026 at 10:00 AM"
             r"(\w+\s+\d{1,2},?\s+\d{4})\s+at\s+\d{1,2}:\d{2}\s*[APMapm]{2}",
-            # "on July 15, 2026 at 10:00"
             r"on\s+(\w+\s+\d{1,2},?\s+\d{4})\s+at\s+\d",
-            # "5/14/2026 at 12:00 PM"
             r"(\d{1,2}/\d{1,2}/\d{4})\s+at\s+\d{1,2}:\d{2}\s*[APMapm]{2}",
             r"on\s+(\d{1,2}/\d{1,2}/\d{4})\s+at\s+\d",
-            # "JULY 15, 2026" or "JULY 15 2026" — explicit month name
             r"(?:SALE\s+)?(?:DATE[:\s]+)?(?:ON\s+)?((?:JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+\d{1,2},?\s+\d{4})",
-            # "JULY ___, 2026" with handwritten number OCR'd as digit or blank
             r"((?:JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+[\d_]+,?\s+\d{4})",
-            # "ON JULY 7 ." or "ON JULY 7," — month day only, year from context
             r"ON\s+((?:JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+\d{1,2})[,\.\s].*?(\d{4})",
             r"[Ss]ale\s+[Dd]ate[:\s]+(\w+\s+\d{1,2},?\s+\d{4})",
             r"notice\s+is\s+hereby\s+given\s+that\s+on\s+(\d{1,2}/\d{1,2}/\d{4})",
         ]:
             m = re.search(pat, text, re.I)
-            if m:
-                if m.lastindex and m.lastindex >= 2:
-                    # month+day pattern with separate year group
-                    raw = m.group(1).strip() + " " + m.group(2).strip()
-                else:
-                    raw = m.group(1).strip()
-                # Skip if contains blanks/underscores only for the day
-                if re.search(r"_{2,}", raw):
-                    continue
-                d = _norm_date(raw)
-                if re.match(r"20\d{2}-\d{2}-\d{2}", d):
+            if not m:
+                continue
+            raw = (m.group(1).strip() + " " + m.group(2).strip()) if m.lastindex and m.lastindex >= 2 else m.group(1).strip()
+            if re.search(r"_{2,}", raw):
+                continue
+            d = _norm_date(raw)
+            if re.match(r"20\d{2}-\d{2}-\d{2}", d):
+                year = int(d[:4])
+                if year >= CURRENT_YEAR:   # only accept current or future dates
                     rec["auction_date"] = d
                     break
 
@@ -411,55 +417,90 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
     return rec
 
 
-# ── Address parser ────────────────────────────────────────────────────────────
+# ── Address parser ─────────────────────────────────────────────────────────────
 def _parse_addr(raw: str) -> Optional[dict]:
     if not raw or not raw.strip():
         return None
     raw = " ".join(raw.split()).strip()
     raw = re.sub(r"^[Ii]s\s+[Pp]urported\s+[Tt]o\s+[Bb]e[:\s]*", "", raw).strip()
     raw = re.sub(r"^[Tt]he\s+street\s+address[^:]*is[:\s]*", "", raw, flags=re.I).strip()
+    # Remove OCR page number artifacts like "17 " at start
+    raw = re.sub(r"^\d{1,3}\s+(?=\d{2,5}\s+[NSEW])", "", raw).strip()
+
+    # Skip courthouse addresses
+    if COURTHOUSE_RE.search(raw):
+        return None
 
     # "street, city, [state] zip"
-    m = re.match(r"^(.+?),\s*([A-Za-z][A-Za-z\s]*?),\s*(?:([A-Za-z]{2})\s+)?(\d{5}(?:-\d{4})?)$", raw)
+    m = re.match(r"^(.+?),\s*([A-Za-z][A-Za-z\s]*?),\s*(?:([A-Za-z]{2,})\s+)?(\d{5}(?:-\d{4})?)$", raw)
     if m:
         street = m.group(1).strip()
-        city   = _fix_city(m.group(2).strip())
-        state  = (m.group(3) or "AZ").upper().strip()
-        zip_   = m.group(4).strip()
-        return {"street": street.title(), "city": city.title(), "state": state, "zip": zip_}
+        city_raw = m.group(2).strip()
+        state_raw = (m.group(3) or "AZ").strip()
+        zip_  = m.group(4).strip()
+
+        # Fix "Phoenix, Arizona" → state=AZ (state_raw might be "Arizona" not "AZ")
+        state = _normalize_state(state_raw)
+        city  = _fix_city(city_raw)
+        if city and not COURTHOUSE_RE.search(city):
+            return {"street": street.title(), "city": city.title(), "state": state, "zip": zip_}
 
     # No comma before city: "123 Main St City, AZ 85001"
-    m2 = re.match(r"^(\d+\s+.+?),?\s*([A-Za-z]{2})\s+(\d{5})$", raw, re.I)
+    m2 = re.match(r"^(\d+\s+.+?),?\s*([A-Za-z]{2,})\s+(\d{5})$", raw, re.I)
     if m2:
         pre   = m2.group(1).strip()
-        state = m2.group(2).upper()
+        state = _normalize_state(m2.group(2))
         zip_  = m2.group(3)
         street, city = _split_street_city(pre)
-        if city:
+        if city and not COURTHOUSE_RE.search(city):
             return {"street": street.title(), "city": city.title(), "state": state, "zip": zip_}
-        return {"street": pre.title(), "city": "", "state": state, "zip": zip_}
+        if pre and not COURTHOUSE_RE.search(pre):
+            return {"street": pre.title(), "city": "", "state": state, "zip": zip_}
 
     # Fallback
     zip_m = re.search(r"(\d{5})", raw)
     if zip_m:
         pre = raw[:zip_m.start()].rstrip(",").strip()
-        state_m = re.search(r",?\s*([A-Za-z]{2})\s*$", pre)
-        state = state_m.group(1).upper() if state_m else "AZ"
-        pre = pre[:state_m.start()].strip() if state_m else pre
+        state_m = re.search(r",?\s*([A-Za-z]{2,})\s*$", pre)
+        state = _normalize_state(state_m.group(1)) if state_m else "AZ"
+        pre   = pre[:state_m.start()].strip() if state_m else pre
         parts = pre.split(",")
         if len(parts) >= 2:
             street = parts[0].strip()
             city   = _fix_city(parts[-1].strip())
-            return {"street": street.title(), "city": city.title(), "state": state, "zip": zip_m.group(1)}
+            if city and not COURTHOUSE_RE.search(city):
+                return {"street": street.title(), "city": city.title(), "state": state, "zip": zip_m.group(1)}
     return None
 
 
+def _normalize_state(raw: str) -> str:
+    """Convert 'Arizona', 'Arizo', 'Az' etc → 'AZ'"""
+    raw = raw.strip().upper()
+    if raw in US_STATES:
+        return raw
+    # Full state name mapping (common ones)
+    names = {
+        "ARIZONA":"AZ","CALIFORNIA":"CA","TEXAS":"TX","NEVADA":"NV",
+        "UTAH":"UT","COLORADO":"CO","NEW MEXICO":"NM","OKLAHOMA":"OK",
+        "KANSAS":"KS","VIRGINIA":"VA","KENTUCKY":"KY",
+    }
+    if raw in names:
+        return names[raw]
+    # Partial match — try first 2 chars  
+    # Special case: "ARIZO" starts with "AR" (Arkansas) but is Arizona
+    if raw.startswith("ARIZO"):
+        return "AZ"
+    for abbr in US_STATES:
+        if raw == abbr[:len(raw)] and len(raw) >= 3:
+            return abbr
+    return "AZ"  # default
+
+
 def _split_street_city(text: str) -> tuple:
-    """Split 'N 198TH LN BUCKEYE' → ('N 198TH LN', 'BUCKEYE')"""
     tokens = text.upper().split()
     last_st = -1
     for i, tok in enumerate(tokens):
-        if tok.rstrip(".") in STREET_TYPES:
+        if tok.rstrip(".").rstrip(",") in STREET_TYPES:
             last_st = i
     if last_st >= 0 and last_st < len(tokens) - 1:
         return " ".join(tokens[:last_st+1]), " ".join(tokens[last_st+1:])
@@ -467,7 +508,6 @@ def _split_street_city(text: str) -> tuple:
 
 
 def _fix_city(city: str) -> str:
-    """If city starts with a street type, extract real city after it."""
     tokens = city.upper().split()
     for i, tok in enumerate(tokens):
         if tok.rstrip(".") in STREET_TYPES and i < len(tokens) - 1:
@@ -483,29 +523,38 @@ def _is_company(name: str) -> bool:
     return bool(tokens & COMPANY_WORDS)
 
 
-def _parse_person_name(raw: str) -> dict:
+def _parse_person_name(raw: str, from_doc: bool = False) -> dict:
+    """
+    Parse a person name.
+    from_doc=True  → from OCR/document text: natural FIRST [MIDDLE] LAST order
+    from_doc=False → from recorder API: recorder LAST FIRST [MIDDLE] order
+    """
     raw = re.sub(
-        r"\s*,?\s*\b(?:husband|wife|married|unmarried|a\s+single|woman|man|trustor|grantor|an?)\b.*$",
+        r"\s*,?\s*\b(?:husband|wife|married|unmarried|a\s+single|woman|man|trustor|grantor)\b.*$",
         "", raw, flags=re.I
     ).strip().strip(",").strip()
 
     if not raw:
         return {"first": "", "last": ""}
-
     tokens = raw.split()
     if not tokens:
         return {"first": "", "last": ""}
     if len(tokens) == 1:
         return {"first": "", "last": tokens[0].title()}
 
-    # Mixed case (natural order: First Last) vs ALL CAPS (recorder: LAST FIRST)
+    # Mixed case always means natural order (First Last)
     if raw[0].isupper() and not raw.isupper():
         return {"first": " ".join(tokens[:-1]).title(), "last": tokens[-1].title()}
-    return {"last": tokens[0].title(), "first": " ".join(tokens[1:]).title()}
 
+    # ALL CAPS — use source hint
+    if from_doc:
+        # Document/OCR text uses natural order: FIRST [MIDDLE] LAST
+        return {"first": " ".join(tokens[:-1]).title(), "last": tokens[-1].title()}
+    else:
+        # Recorder API uses recorder order: LAST FIRST [MIDDLE]
+        return {"last": tokens[0].title(), "first": " ".join(tokens[1:]).title()}
 
 def _assign_names_smart(rec: dict, names: list) -> dict:
-    """Pre-populate from recorder API names[] (alphabetical). OCR overrides."""
     if not names:
         return rec
 
@@ -513,18 +562,25 @@ def _assign_names_smart(rec: dict, names: list) -> dict:
     companies = [n for n in names if _is_company(n)]
 
     trustee_kw = {"TRUSTEE","RECON","FINANCIAL","MORTGAGE","TITLE","MTC",
-                  "COMMISSIONER","OFFICES","LAW","CORPS","CORP"}
+                  "COMMISSIONER","OFFICES","LAW","CORPS","CORP","PRIME",
+                  "QUALITY","PIONEER","CLEAR","STATEWIDE"}
     trustee = next(
         (c for c in companies if set(c.upper().split()) & trustee_kw),
         companies[0] if companies else None
     )
     if trustee and not rec.get("trustee_name"):
+        # Deduplicate
+        words = trustee.split()
+        half  = len(words) // 2
+        if half > 1 and words[:half] == words[half:]:
+            trustee = " ".join(words[:half])
         rec["trustee_name"] = trustee
 
     if persons:
         p1_raw    = persons[0]
         rel_pat   = r"\s*,?\s*\b(?:HUSBAND|WIFE|MARRIED|UNMARRIED|A\s+SINGLE|WOMAN|MAN)\b.*$"
-        and_parts = re.split(r"\s+AND\s+", p1_raw, maxsplit=1, flags=re.I)
+        name_clean = re.sub(r",?\s+(?:HUSBAND|WIFE)\s+AND\s+", " AND ", p1_raw, flags=re.I)
+        and_parts  = re.split(r"\s+AND\s+", name_clean, maxsplit=1, flags=re.I)
 
         p1 = _parse_person_name(re.sub(rel_pat, "", and_parts[0], flags=re.I).strip())
         rec["first_name"]   = p1["first"]
@@ -659,10 +715,9 @@ def _extract_from_text(pattern: str, text: str) -> Optional[dict]:
 
 
 def _norm_date(raw: str) -> str:
-    from datetime import datetime
     raw = raw.strip().rstrip(".")
     for fmt in ("%m/%d/%Y", "%B %d, %Y", "%b %d, %Y", "%B %d %Y",
-                "%B %d, %Y", "%b %d %Y", "%m-%d-%Y", "%B %d,  %Y"):
+                "%b %d %Y", "%m-%d-%Y", "%B %d,  %Y"):
         try:
             return datetime.strptime(raw, fmt).strftime("%Y-%m-%d")
         except ValueError:
