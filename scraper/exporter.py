@@ -1,16 +1,15 @@
 """
-scraper/exporter.py — JSON + GHL CSV output
+scraper/exporter.py
 
-GHL CSV columns (updated):
+CSV columns:
+  - Removed: Lead Type, Document Type
   - Added: First Name 2, Last Name 2
-  - Removed: Lead Type
-  - Cleaned: Original Loan (no trailing spaces)
+  - Added: Estimated Value, Equity (blank — filled manually later)
 """
 
 import csv
 import json
 import logging
-from datetime import datetime
 from pathlib import Path
 
 log = logging.getLogger("exporter")
@@ -28,10 +27,11 @@ GHL_COLUMNS = [
     "Property City",
     "Property State",
     "Property Zip",
-    "Document Type",
     "Date Filed",
     "Document Number",
     "Original Loan",
+    "Estimated Value",
+    "Equity",
     "Trustee Name",
     "Trustee Phone",
     "Auction Date",
@@ -57,24 +57,20 @@ def export_ghl_csv(records: list[dict], path: Path) -> None:
         writer.writeheader()
         for rec in records:
             try:
-                row = _rec_to_ghl_row(rec)
-                writer.writerow(row)
+                writer.writerow(_rec_to_row(rec))
                 rows_written += 1
             except Exception as exc:
-                log.warning(f"GHL row error for {rec.get('doc_num')}: {exc}")
+                log.warning(f"Row error {rec.get('doc_num')}: {exc}")
 
     log.info(f"GHL CSV → {path} ({rows_written} rows)")
 
 
-def _rec_to_ghl_row(rec: dict) -> dict:
+def _rec_to_row(rec: dict) -> dict:
     amount = rec.get("amount")
-    if amount:
-        try:
-            loan_str = f"${float(amount):,.2f}"
-        except (ValueError, TypeError):
-            loan_str = str(amount).strip()
-    else:
-        loan_str = ""
+    try:
+        loan_str = f"${float(amount):,.2f}" if amount else ""
+    except (ValueError, TypeError):
+        loan_str = str(amount or "").strip()
 
     return {
         "First Name":       (rec.get("first_name")   or "").strip(),
@@ -89,10 +85,11 @@ def _rec_to_ghl_row(rec: dict) -> dict:
         "Property City":    (rec.get("prop_city")    or "").strip(),
         "Property State":   (rec.get("prop_state")   or "AZ").strip(),
         "Property Zip":     (rec.get("prop_zip")     or "").strip(),
-        "Document Type":    (rec.get("doc_type")     or "N/TR SALE").strip(),
         "Date Filed":       (rec.get("filed")        or "").strip(),
         "Document Number":  (rec.get("doc_num")      or "").strip(),
         "Original Loan":    loan_str,
+        "Estimated Value":  "",   # filled manually
+        "Equity":           "",   # filled manually
         "Trustee Name":     (rec.get("trustee_name")  or "").strip(),
         "Trustee Phone":    (rec.get("trustee_phone") or "").strip(),
         "Auction Date":     (rec.get("auction_date")  or "").strip(),
