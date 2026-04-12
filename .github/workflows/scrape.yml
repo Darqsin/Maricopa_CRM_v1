@@ -3,7 +3,21 @@ name: Maricopa Lead Scraper
 on:
   schedule:
     - cron: "0 7 * * *"
+
   workflow_dispatch:
+    inputs:
+      start_date:
+        description: "Start date (YYYY-MM-DD) — leave blank to use LOOKBACK_DAYS"
+        required: false
+        default: ""
+      end_date:
+        description: "End date (YYYY-MM-DD) — leave blank for today"
+        required: false
+        default: ""
+      lookback_days:
+        description: "Days to look back (used only if start_date is blank)"
+        required: false
+        default: "7"
 
 permissions:
   contents: write
@@ -63,7 +77,10 @@ jobs:
 
       - name: Run lead scraper
         env:
-          LOOKBACK_DAYS: ${{ vars.LOOKBACK_DAYS || '7' }}
+          # If manually triggered with dates, use those; otherwise use lookback
+          START_DATE: ${{ github.event.inputs.start_date }}
+          END_DATE:   ${{ github.event.inputs.end_date }}
+          LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || vars.LOOKBACK_DAYS || '7' }}
           PYTHONUNBUFFERED: "1"
         run: python scraper/fetch.py
 
@@ -76,7 +93,7 @@ jobs:
       - name: Parse NTS PDFs to Excel and CSV
         run: python maricopa_nts_parser_v01.py
 
-      - name: Commit records and outputs
+      - name: Commit all outputs
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
