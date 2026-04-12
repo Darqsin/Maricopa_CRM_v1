@@ -1,5 +1,9 @@
 """
 scraper/fetch.py — Orchestrator (NS-only)
+
+Date range priority:
+  1. START_DATE + END_DATE env vars (set via workflow_dispatch inputs)
+  2. LOOKBACK_DAYS env var (default 7)
 """
 import asyncio
 import logging
@@ -24,9 +28,6 @@ logging.basicConfig(
 )
 log = logging.getLogger("fetch")
 
-LOOKBACK_DAYS = int(os.getenv("LOOKBACK_DAYS", 7))
-
-# NS ONLY per user request
 LEAD_TYPES = {
     "NS": ("NOTS", "Notice of Trustee Sale"),
 }
@@ -35,15 +36,43 @@ OUTPUT_PATHS = [Path("dashboard/records.json"), Path("data/records.json")]
 GHL_CSV_PATH = Path("data/ghl_export.csv")
 
 
-def date_range(lookback):
-    end   = datetime.utcnow().date()
-    start = end - timedelta(days=lookback)
-    return str(start), str(end)
+def get_date_range() -> tuple[str, str]:
+    """
+    Returns (start_date, end_date) as YYYY-MM-DD strings.
+    Reads START_DATE/END_DATE env vars first; falls back to LOOKBACK_DAYS.
+    """
+    start = os.getenv("START_DATE", "").strip()
+    end   = os.getenv("END_DATE",   "").strip()
+
+    if start and end:
+        # Validate format
+        try:
+            datetime.strptime(start, "%Y-%m-%d")
+            datetime.strptime(end,   "%Y-%m-%d")
+            log.info(f"Using explicit date range: {start} → {end}")
+            return start, end
+        except ValueError:
+            log.warning(f"Invalid date format (START_DATE={start}, END_DATE={end}) — falling back to LOOKBACK_DAYS")
+
+    if start and not end:
+        end = str(datetime.utcnow().date())
+        try:
+            datetime.strptime(start, "%Y-%m-%d")
+            log.info(f"Using START_DATE={start} to today={end}")
+            return start, end
+        except ValueError:
+            log.warning(f"Invalid START_DATE={start} — falling back to LOOKBACK_DAYS")
+
+    # Fallback: LOOKBACK_DAYS
+    lookback = int(os.getenv("LOOKBACK_DAYS", "7"))
+    end   = str(datetime.utcnow().date())
+    start = str((datetime.utcnow() - timedelta(days=lookback)).date())
+    log.info(f"Using lookback={lookback}d: {start} → {end}")
+    return start, end
 
 
 def build_flags(rec):
-    flags = []
-    flags.append("TRUSTEE_SALE")
+    flags = ["TRUSTEE_SALE"]
     if rec.get("amount") and float(rec.get("amount") or 0) > 500_000:
         flags.append("HIGH_VALUE")
     if rec.get("auction_date"):
@@ -65,8 +94,8 @@ def build_flags(rec):
 
 
 async def main():
-    start_date, end_date = date_range(LOOKBACK_DAYS)
-    log.info(f"Run started | lookback={LOOKBACK_DAYS}d | {start_date} → {end_date}")
+    start_date, end_date = get_date_range()
+    log.info(f"Run started | {start_date} → {end_date}")
 
     scraper = ClerkScraper(lead_types=LEAD_TYPES, start_date=start_date, end_date=end_date)
     raw_records = await scraper.run()
@@ -96,7 +125,7 @@ async def main():
     log.info(f"GHL CSV → {GHL_CSV_PATH}")
     log.info(
         f"Done | total={output['total']} | with_addr={output['with_address']} "
-        f"| top_score={enriched[0].get('score',0) if enriched else 0}"
+        f"| top_score={enriched[0].get('score', 0) if enriched else 0}"
     )
 
 
