@@ -126,6 +126,8 @@ async def enrich_records(records: list[dict]) -> list[dict]:
                 detail = _fetch_recorder_detail(rec.get("doc_num", ""))
                 if detail:
                     rec = _assign_names_smart(rec, detail.get("names") or [])
+                    # If the API assigned the trustee as owner, clear so OCR can correct it
+                    rec = _clear_name_if_trustee(rec)
 
                 if ocr_ok:
                     rec = _enrich_via_ocr(rec)
@@ -259,6 +261,10 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
             if COURTHOUSE_RE.search(raw):
                 continue
 
+            # SKIP addresses that appear inside a trustee/beneficiary section
+            if _is_in_trustee_section(text, m.start()):
+                continue
+
             addr = _parse_addr(raw)
             if addr and addr.get("zip"):
                 rec["prop_address"] = addr["street"]
@@ -381,7 +387,14 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
                     break
 
     # ── LOAN AMOUNT ────────────────────────────────────────────────────────
-    if not rec.get("amount"):
+    # Guard: only skip extraction if we already have a valid numeric amount > 0
+    existing_amount = rec.get("amount")
+    try:
+        _has_amount = existing_amount is not None and float(str(existing_amount).replace(",","").replace("$","")) > 0
+    except (ValueError, TypeError):
+        _has_amount = False
+
+    if not _has_amount:
         for pat in [
             r"ORIGINAL\s+PRINCIPAL\s+BALANCE[:\s]+\$?\s*([\d,]+(?:\.\d{2})?)",
             r"[Oo]riginal\s+[Pp]rincipal\s+[Bb]alance[:\s]+\$?\s*([\d,]+(?:\.\d{2})?)",
@@ -607,6 +620,52 @@ def _assign_names_smart(rec: dict, names: list) -> dict:
 
     lenders = [c for c in companies if c != trustee]
     rec["grantee"] = lenders[0] if lenders else ""
+    return rec
+
+
+def _is_in_trustee_section(text: str, match_pos: int) -> bool:
+    """
+    Returns True if match_pos falls within a Trustee/Beneficiary address block.
+    Looks back up to 300 chars for trustee/beneficiary keywords with no
+    intervening trustor/property keyword to reset context.
+    """
+    window = text[max(0, match_pos - 300):match_pos].upper()
+    trustee_kw = re.search(
+        r"\b(?:TRUSTEE|BENEFICIARY|SUBSTITUTE\s+TRUSTEE|NAME\s+AND\s+ADDRESS\s+OF\s+(?:ORIGINAL\s+)?TRUSTEE)\b",
+        window,
+    )
+    if not trustee_kw:
+        return False
+    # If a property/trustor keyword appears AFTER the trustee keyword in that window, safe
+    reset_kw = re.search(
+        r"\b(?:TRUSTOR|GRANTOR|BORROWER|PURPORTED|PROPERTY\s+ADDRESS|SITUS|COMMONLY\s+KNOWN)\b",
+        window[trustee_kw.end():],
+    )
+    return reset_kw is None
+
+
+def _clear_name_if_trustee(rec: dict) -> dict:
+    """
+    If the recorder API assigned the trustee company/person as the owner name,
+    wipe first/last so the OCR trustor extraction can fill it correctly.
+    This happens when the API names list contains only the trustee, or when
+    an individual trustee/commissioner gets classified as a person.
+    """
+    trustee = (rec.get("trustee_name") or "").upper().strip()
+    if not trustee:
+        return rec
+    last  = (rec.get("last_name")  or "").upper().strip()
+    first = (rec.get("first_name") or "").upper().strip()
+    full  = f"{last} {first}".strip()
+    # Clear if the assigned person name appears verbatim inside the trustee name,
+    # or if any COMPANY_WORDS token leaked into last_name
+    if (full and full in trustee) or (last and _is_company(last)):
+        rec["first_name"]   = ""
+        rec["last_name"]    = ""
+        rec["first_name_2"] = ""
+        rec["last_name_2"]  = ""
+        rec["owner"]        = ""
+        log.debug(f"Cleared trustee-contaminated name '{full}' for {rec.get('doc_num')}")
     return rec
 
 
