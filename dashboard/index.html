@@ -369,30 +369,35 @@ function renderTable(recs) {
 
 // ── GHL CSV Export ───────────────────────────────────────────────────────────
 function exportCSV() {
+  // Column order must exactly match scraper/exporter.py GHL_COLUMNS
   const cols = [
-    "First Name","Last Name","Mailing Address","Mailing City","Mailing State","Mailing Zip",
-    "Property Address","Property City","Property State","Property Zip",
-    "Lead Type","Document Type","Date Filed","Document Number",
-    "Original Loan","Trustee Name","Trustee Phone","Auction Date","PDF URL",
+    "First Name", "Last Name", "First Name 2", "Last Name 2",
+    "Mailing Address", "Mailing City", "Mailing State", "Mailing Zip",
+    "Property Address", "Property City", "Property State", "Property Zip",
+    "Date Filed", "Document Number",
+    "Original Loan", "Estimated Value", "Equity",
+    "Trustee Name", "Trustee Phone", "Auction Date", "PDF URL",
   ];
 
-  const typeMap = {
-    NS:"Notice of Trustee Sale", FL:"Federal Tax Lien",
-    SL:"State Tax Lien", DE:"Tax Deed", PD:"Probate Document", PJ:"Probate Document",
-  };
+  const csv = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const loan = r => r.amount ? "$" + Number(r.amount).toLocaleString() : "";
 
   const rows = [cols.join(",")];
   for (const r of ALL_RECORDS) {
-    const loan = r.amount ? "$" + Number(r.amount).toLocaleString() : "";
-    const row = [
-      r.first_name   || "", r.last_name    || "",
-      r.mail_address || "", r.mail_city    || "", r.mail_state || "", r.mail_zip || "",
-      r.prop_address || "", r.prop_city    || "", r.prop_state || "AZ", r.prop_zip || "",
-      typeMap[r.lead_key] || r.cat_label || "",
-      r.doc_type || "", r.filed || "", r.doc_num || "",
-      loan, r.trustee_name || "", r.trustee_phone || "", r.auction_date || "", r.pdf_url || "",
-    ].map(v => `"${String(v).replace(/"/g,'""')}"`);
-    rows.push(row.join(","));
+    rows.push([
+      csv(r.first_name   || ""), csv(r.last_name    || ""),
+      csv(r.first_name_2 || ""), csv(r.last_name_2  || ""),
+      csv(r.mail_address || ""), csv(r.mail_city    || ""),
+      csv(r.mail_state   || ""), csv(r.mail_zip     || ""),
+      csv(r.prop_address || ""), csv(r.prop_city    || ""),
+      csv(r.prop_state   || "AZ"), csv(r.prop_zip   || ""),
+      csv(r.filed        || ""), csv(r.doc_num      || ""),
+      csv(loan(r)),
+      csv(""),   // Estimated Value — filled manually
+      csv(""),   // Equity          — filled manually
+      csv(r.trustee_name  || ""), csv(r.trustee_phone || ""),
+      csv(r.auction_date  || ""), csv(r.pdf_url       || ""),
+    ].join(","));
   }
 
   const blob = new Blob([rows.join("\n")], { type: "text/csv" });
