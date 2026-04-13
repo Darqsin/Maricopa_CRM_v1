@@ -224,9 +224,9 @@ def _is_trustee_like(name: str) -> bool:
     if tokens & _TRUSTEE_COMPANY_KW:
         return True
 
-    # Known individual trustee patterns: "Firstname Lastname, Esq." or
-    # anything containing "ESQ", "PLLC", "LLC" after a personal name
-    if re.search(r"\bESQ\.?\b|\bPLLC\b|\bLLC\b", upper):
+    # Individual trustee patterns: ESQ or PLLC after a personal name
+    # Note: plain LLC is NOT a reliable trustee indicator — many property owners are LLCs
+    if re.search(r"\bESQ\.?\b|\bPLLC\b", upper):
         return True
 
     # "In Favor Of …" / "In Re …" — instrument phrasing, not an owner
@@ -269,8 +269,9 @@ def _extract_raw_trustee(text: str) -> str:
             continue  # street address or phone
         if re.match(r"^[A-Za-z][A-Za-z\s]+,\s*[A-Z]{2}\s+\d{5}", line):
             continue  # bare city/state/zip
-        # Trim State Bar qualifier
+        # Trim State Bar qualifier and broker qualifier
         line = re.sub(r",?\s+a\s+member\s+of\s+the\s+State\s+Bar.*$", "", line, flags=re.I).strip()
+        line = re.sub(r",?\s+licensed\s+real\s+estate\s+broker.*$", "", line, flags=re.I).strip()
         if len(line) > 3:
             # Deduplicate "Foo LLC Foo LLC"
             words = line.split()
@@ -310,6 +311,8 @@ def _extract_raw_trustor(text: str) -> str:
 
     # Fallback inline patterns
     for pat in [
+        # Single-line format: "NAME AND ADDRESS OF TRUSTOR: NAME, ADDR BENEFICIARY:..."
+        r"NAME\s+AND\s+ADDRESS\s+OF\s+TRUSTOR[:\s]+([^:]+?)(?:\s+BENEFICIARY\b|\s+ORIGINAL\s+PRINCIPAL|\s+TAX\s+PARCEL|\s+IDENTIFIABLE|\s+NAME\s+AND\s+ADDRESS\s+OF\s+TRUSTEE|\Z)",
         r"executed\s+by\s+([A-Z][a-zA-Z\s\.,]+?)\s*,?\s*(?:[Aa]\s+[Ss]ingle|[Aa]\s+[Mm]arried|[Hh]usband|[Ww]ife|as\s+[Tt]rustor|[Tt]rustor\b)",
         r"([A-Z][a-zA-Z\s\.,]{3,60}?)\s+as\s+[Tt]rustor",
         r"[Tt]rustor[:\s]+([A-Z][A-Za-z\s,\.]{3,80}?)(?:\n|,\s*[Aa]\s+[Ss]ingle)",
@@ -348,8 +351,8 @@ def _set_owner_from_trustor(rec: dict, raw_trustor: str, known_trustee: str = ""
 
     raw = " ".join(raw_trustor.split()).strip().rstrip(",")
 
-    # Clip address portion: "NAME, 123 Main St…"
-    addr_start = re.search(r",\s*\d{2,5}\s+[NSEW\d]", raw)
+    # Clip address portion — handle both "NAME, 123 Main St" and "NAME 123 Main St"
+    addr_start = re.search(r",?\s*\d{2,5}\s+[NSEW\d]", raw)
     name_part  = raw[:addr_start.start()].strip().rstrip(",") if addr_start else raw.split(",")[0].strip()
 
     # Hard reject: trustee match or instrument phrase
@@ -367,7 +370,7 @@ def _set_owner_from_trustor(rec: dict, raw_trustor: str, known_trustee: str = ""
     if is_co:
         display = re.sub(
             r",?\s*(?:AN?\s+ARIZONA|A\s+\w+\s+)?(?:LIMITED\s+LIABILITY\s+COMPANY|"
-            r"LLC|L\.L\.C\.|CORPORATION|CORP|INC\.?|LIMITED\s+PARTNERSHIP|L\.P\.)$",
+            r"LLC|L\.L\.C\.|CORPORATION|CORP|INC\.?|LIMITED\s+PARTNERSHIP|L\.P\.)(?:[,\s].*)?$",
             "", name_part, flags=re.I,
         ).strip().rstrip(",")
         rec["first_name"]   = ""
@@ -441,6 +444,8 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
     # Fallback when labeled block isn't found
     if not rec.get("trustee_name"):
         for pat in [
+            # Single-line format: "NAME AND ADDRESS OF TRUSTEE (...): NAME, licensed..."
+            r"NAME\s+AND\s+ADDRESS\s+OF\s+TRUSTEE[^:]*[:\s]+([^:,]+?)(?:,\s*licensed|,\s*an\s+az|\s+QUALIFICATIONS|\s+\d{3,5}\s+[NSEW]|\Z)",
             r"[Ss]ubstitute\s+[Tt]rustee[:\s]+([^\n,]{3,80}?)(?:,|\n)",
             r"designation\s+of\s+([A-Z][A-Za-z]{2,}(?:\s+[A-Za-z\.]+){1,4})\s+as\s+(?:[Ff]oreclosure\s+)?[Cc]ommissioner",
             r"([A-Z][A-Za-z]{2,}(?:\s+[A-Za-z\.]+){1,4})\s+as\s+[Ff]oreclosure\s+[Cc]ommissioner",
@@ -490,6 +495,8 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
     if not rec.get("prop_address"):
         for pat in [
             r"(?:PURPORTED\s+STREET\s+ADDRESS|[Ss]treet\s+address\s+or\s+identifiable\s+location)[:\s]+([^\n]+)",
+            # Single-line inline format used by Ronald Herb / Tolesoaz docs
+            r"IDENTIFIABLE\s+LOCATION[:\s]+([^\n*\$]+?)(?:\s+\*|\s+\d{8,}|\s+NAME\s+AND\s+ADDRESS|\Z)",
             r"IDENTIFIABLE\s+LOCATION[:\s]+([^\n]+)",
             r"[Cc]ommonly\s+known\s+as[:\s]+([^\n]+)",
             r"(?:[Ss]treet\s+address[^:]*)?[Pp]urported\s+to\s+be[:\s]*:?\s*([^\n]{10,100})",
