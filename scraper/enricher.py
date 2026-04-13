@@ -40,6 +40,11 @@ COURTHOUSE_PATTERNS = [
     r"Maricopa\s+County\s+Courthouse",
     r"Superior\s+Building",
     r"Maricopa\s+County\s+Court",
+    # Clear Recon Corp office — recurring OCR artifact address
+    r"3707\s+East\s+Southern\s+Avenue",
+    r"3707\s+E\.?\s+Southern",
+    # Other known trustee office addresses that bleed in
+    r"Phoenix,\s+Arizona\s+85012",  # Quality/MTC address fragment
 ]
 COURTHOUSE_RE = re.compile("|".join(COURTHOUSE_PATTERNS), re.I)
 
@@ -123,11 +128,11 @@ async def enrich_records(records: list[dict]) -> list[dict]:
 
         for i, rec in enumerate(records):
             try:
-                # OCR first — reads directly from document, knows section layout
+                # OCR runs first — reads directly from document
                 if ocr_ok:
                     rec = _enrich_via_ocr(rec)
 
-                # Recorder API fills only fields OCR couldn't populate
+                # API fills only fields OCR couldn't populate
                 detail = _fetch_recorder_detail(rec.get("doc_num", ""))
                 if detail:
                     rec = _assign_names_smart(rec, detail.get("names") or [])
@@ -197,8 +202,8 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
 
     # ── TRUSTEE ────────────────────────────────────────────────────────────
     # Scope to the labeled "NAME, ADDRESS & TELEPHONE NUMBER OF TRUSTEE" block.
-    # Use [^\n]* (zero-or-more) so blank lines between the label and the name
-    # don't break the capture. Never pull from the beneficiary block above it.
+    # [^\n]* (zero-or-more) handles blank lines between label and name.
+    # Never pull from the beneficiary block above it.
     trustee_name = None
     trustee_block_m = re.search(
         r"NAME[,\s]+ADDRESS\s*[&]\s*TELEPHONE\s+NUMBER\s+OF\s+TRUSTEE[^\n]*\n((?:[^\n]*\n){1,10})",
@@ -206,18 +211,21 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
     )
     if trustee_block_m:
         tblock_lines = [l.strip() for l in trustee_block_m.group(1).splitlines() if l.strip()]
-        bad = {"SALE","OBJECTION","BELIEVE","DEFENSE","ACTION","COURT","FILE",
-               "LICENSED","BROKER","QUALIFICATIONS","REGULATION","AGENCY",
-               "FAX","SALES","ONLINE","INFORMATION","AVAILABLE","REQUESTS","WEBSITE"}
+        bad_words = {"SALE","OBJECTION","BELIEVE","DEFENSE","ACTION","COURT","FILE",
+                     "LICENSED","BROKER","QUALIFICATIONS","REGULATION","AGENCY",
+                     "FAX","SALES","ONLINE","INFORMATION","AVAILABLE","REQUESTS","WEBSITE"}
         for tl in tblock_lines:
             candidate = " ".join(tl.split()).strip()
             if candidate.startswith("(") or candidate.startswith("["):
-                continue  # parenthetical note line
-            if set(candidate.upper().split()) & bad:
                 continue
+            if set(candidate.upper().split()) & bad_words:
+                continue
+            # Skip street addresses and phone numbers
             if re.match(r"^\d{3,5}\s+\w", candidate) or re.match(r"^\(?\d{3}\)?", candidate):
-                continue  # street address or phone number line
-            # Trim ", a member of the State Bar of Arizona" qualifiers
+                continue
+            # Skip bare "City, State Zip" lines
+            if re.match(r"^[A-Za-z][A-Za-z\s]+,\s*[A-Z]{2}\s+\d{5}", candidate):
+                continue
             candidate = re.sub(r",?\s+a\s+member\s+of\s+the\s+State\s+Bar.*$", "", candidate, flags=re.I).strip()
             if len(candidate) > 3:
                 words = candidate.split()
@@ -227,12 +235,13 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
                 trustee_name = candidate[:100]
                 break
 
-    # Fallback patterns when the labeled block isn't present
+    # Fallback when labeled block isn't present
     if not trustee_name:
         for pat in [
             r"[Ss]ubstitute\s+[Tt]rustee[:\s]+([^\n,]{3,80}?)(?:,|\n)",
-            r"designation\s+of\s+([A-Z][A-Za-z\s,\.]+?)\s+as\s+(?:[Ff]oreclosure\s+)?[Cc]ommissioner",
-            r"([A-Z][A-Za-z\s,\.&]+?)\s+as\s+[Ff]oreclosure\s+[Cc]ommissioner",
+            # Require at least 2 capitalised words to avoid "s designation of me" fragments
+            r"designation\s+of\s+([A-Z][A-Za-z]{2,}(?:\s+[A-Za-z\.]+){1,4})\s+as\s+(?:[Ff]oreclosure\s+)?[Cc]ommissioner",
+            r"([A-Z][A-Za-z]{2,}(?:\s+[A-Za-z\.]+){1,4})\s+as\s+[Ff]oreclosure\s+[Cc]ommissioner",
         ]:
             m = re.search(pat, text, re.I)
             if m:
@@ -258,14 +267,14 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
     if trustee_name:
         rec["trustee_name"] = trustee_name
 
-    # Phone: prefer number inside the trustee block to avoid beneficiary phones
+    # Phone: prefer inside trustee block to avoid beneficiary phones
     phone_window = text[trustee_block_m.start():trustee_block_m.start()+600] if trustee_block_m else text
     phones = re.findall(r"\(?\d{3}\)?[\s\-\.]\d{3}[\s\-\.]\d{4}", phone_window)
     if phones:
         rec["trustee_phone"] = phones[0].strip()
 
     # ── PROPERTY ADDRESS ───────────────────────────────────────────────────
-    # Capture auction/law-firm addresses so we can reject them below
+    # Capture auction/law-firm addresses to reject them below
     _auction_addr_re = re.compile(
         r"(?:public\s+auction|highest\s+bidder|law\s+(?:office|firm)|PLLC|Esq\.?|sold\s+at)"
         r"[^\n]{0,250}?(\d{3,5}\s+[^\n,]{5,60},\s*[A-Za-z\s]+,\s*(?:AZ|Arizona)\s+\d{5})",
@@ -319,6 +328,7 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
             if (not _is_company(first_line) and
                     not (trustee_name and first_line.upper() in trustee_name.upper())):
                 for line in lines[1:]:
+                    # Skip lines that are just city/state/zip (no street number)
                     if not re.search(r"^\d", line.strip()):
                         continue
                     addr = _parse_addr(line)
@@ -330,9 +340,9 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
                         break
 
     # ── TRUSTOR / OWNER + 2ND OWNER ───────────────────────────────────────
-    # Scan the trustor block line-by-line, skipping paren notes, bare city/zip
-    # lines, and street address lines to find the actual name. When two people
-    # are listed across two lines ("NAME1, ... AND\nNAME2, ..."), join them.
+    # Scan trustor block line-by-line. Skip paren notes, bare city/zip, and
+    # street address lines. When two people span two lines ending with AND,
+    # join them before splitting.
     if not rec.get("last_name"):
         _trustor_name_raw = None
 
@@ -349,12 +359,12 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
                     continue  # bare city/state/zip
                 if re.match(r"^\d{2,5}\s+", tl):
                     continue  # street address
-                # Found the name line — check if it ends with AND (multi-line two-person)
                 _trustor_name_raw = tl
+                # Join continuation line when first line ends with AND
                 if re.search(r"\bAND\s*$", tl, re.I) and idx + 1 < len(tlines):
-                    next_line = tlines[idx + 1]
-                    if not re.match(r"^\d{2,5}\s+", next_line):
-                        _trustor_name_raw = tl.rstrip() + " " + next_line
+                    nxt = tlines[idx + 1]
+                    if not re.match(r"^\d{2,5}\s+", nxt):
+                        _trustor_name_raw = tl.rstrip() + " " + nxt
                 break
 
         # Fallback patterns
@@ -379,6 +389,9 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
             # Reject if name matches the trustee
             if trustee_name and name_part.upper() in trustee_name.upper():
                 name_part = None
+            # Reject lender/instrument phrases like "In Favor Of Wells Fargo Bank"
+            if name_part and re.match(r"(?:in\s+favor\s+of|in\s+re\b|scanner|page\s+\d)", name_part, re.I):
+                name_part = None
 
             if name_part:
                 rec["owner"] = name_part
@@ -394,7 +407,7 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
                     rec["first_name_2"] = ""
                     rec["last_name_2"]  = ""
                 else:
-                    rel_pat = r"\s*,?\s*\b(?:husband|wife|married|unmarried|a\s+single|woman|man|trustor|grantor|an?|not|nor|joint\s+tenants|as\s+his\s+sole|as\s+her\s+sole|sole\s+and|separate\s+property)\b.*$"
+                    rel_pat = r"\s*,?\s*\b(?:husband|wife|married|unmarried|a\s+single|woman|man|trustor|grantor|an?|not|nor|joint\s+tenants|as\s+his\s+sole|as\s+her\s+sole|sole\s+and|separate\s+property|with\s+right)\b.*$"
                     name_clean = re.sub(r",?\s+(?:HUSBAND|WIFE)\s+AND\s+", " AND ", name_part, flags=re.I)
                     parts = re.split(r"\s+AND\s+", name_clean, maxsplit=1, flags=re.I)
 
@@ -502,7 +515,17 @@ def _parse_addr(raw: str) -> Optional[dict]:
     raw = " ".join(raw.split()).strip()
     raw = re.sub(r"^[Ii]s\s+[Pp]urported\s+[Tt]o\s+[Bb]e[:\s]*", "", raw).strip()
     raw = re.sub(r"^[Tt]he\s+street\s+address[^:]*is[:\s]*", "", raw, flags=re.I).strip()
-    # Remove OCR page number artifacts like "17 " at start
+    # Strip leading OCR garbage before the real street number.
+    # Patterns seen in the wild:
+    #   "| 4405 N..."          — scan-line pipe artifact
+    #   "[44Th Lane"           — bracket artifact mid-word (handled by COURTHOUSE_RE miss)
+    #   "17 1234 N..."         — bare page-number before street
+    #   "17 Clear Recon Corp Ro 3707..."  — page number + company name prefix
+    #   "17 Ral Clear Recon Corp 3707..." — same
+    raw = re.sub(r"^[\|\[\]]+\s*", "", raw).strip()
+    raw = re.sub(r"[\[\]]", "", raw).strip()                            # brackets anywhere
+    # Remove "DIGIT(s) WORD(s) DIGIT(s)" prefix where the second digit block is the real street num
+    raw = re.sub(r"^\d{1,3}\s+(?:[A-Za-z][\w\s\.]{0,50}?)(?=\d{3,5}\s+[NSEW])", "", raw).strip()
     raw = re.sub(r"^\d{1,3}\s+(?=\d{2,5}\s+[NSEW])", "", raw).strip()
 
     # Skip courthouse addresses
@@ -636,8 +659,8 @@ def _assign_names_smart(rec: dict, names: list) -> dict:
     if not names:
         return rec
 
-    # Strip OCR page-separator artifacts and other junk from name list
-    names = [n for n in names if not re.match(r"^-{2,}|^Page\s+\d+", n.strip(), re.I)]
+    # Strip OCR artifacts and junk entries
+    names = [n for n in names if not re.match(r"^-{2,}|^Page\s+\d+|^Scanner$", n.strip(), re.I)]
     if not names:
         return rec
 
@@ -661,8 +684,11 @@ def _assign_names_smart(rec: dict, names: list) -> dict:
     # Only fill name fields OCR left blank
     if not rec.get("last_name"):
         trustee_str = (rec.get("trustee_name") or "").upper()
-        # Filter any person whose name is contained in the trustee string
+        # Filter persons whose name appears inside the trustee string
         safe_persons = [p for p in persons if p.upper() not in trustee_str] or persons
+        # Reject lender/instrument phrases
+        safe_persons = [p for p in safe_persons
+                        if not re.match(r"(?:in\s+favor\s+of|in\s+re\b|scanner|page\s+\d)", p, re.I)]
 
         if safe_persons:
             p1_raw    = safe_persons[0]
@@ -689,9 +715,12 @@ def _assign_names_smart(rec: dict, names: list) -> dict:
                 rec["first_name_2"] = p2["first"]
                 rec["last_name_2"]  = p2["last"]
         elif companies:
-            rec["owner"]      = companies[0]
-            rec["first_name"] = ""
-            rec["last_name"]  = companies[0].title()
+            co = companies[0]
+            # Reject instrument/lender phrases that aren't real entity names
+            if not re.match(r"(?:in\s+favor\s+of|in\s+re\b)", co, re.I):
+                rec["owner"]      = co
+                rec["first_name"] = ""
+                rec["last_name"]  = co.title()
 
     lenders = [c for c in companies if c != trustee]
     rec["grantee"] = lenders[0] if lenders else ""
