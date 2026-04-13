@@ -123,14 +123,14 @@ async def enrich_records(records: list[dict]) -> list[dict]:
 
         for i, rec in enumerate(records):
             try:
+                # OCR first — reads directly from document, knows trustor block layout
+                if ocr_ok:
+                    rec = _enrich_via_ocr(rec)
+
+                # Recorder API fills only fields OCR couldn't populate
                 detail = _fetch_recorder_detail(rec.get("doc_num", ""))
                 if detail:
                     rec = _assign_names_smart(rec, detail.get("names") or [])
-                    # If the API assigned the trustee as owner, clear so OCR can correct it
-                    rec = _clear_name_if_trustee(rec)
-
-                if ocr_ok:
-                    rec = _enrich_via_ocr(rec)
 
                 if not rec.get("prop_address"):
                     rec = await _enrich_via_assessor(rec, assessor_page)
@@ -196,28 +196,26 @@ def _ocr_image(png_bytes: bytes) -> str:
 def _extract_all_fields(rec: dict, text: str) -> dict:
 
     # ── TRUSTEE ────────────────────────────────────────────────────────────
+    # Scope extraction to the labeled TRUSTEE block only — never pull from
+    # the beneficiary block, which appears earlier in the document.
     trustee_name = None
-    for pat in [
-        r"[Nn]ame\s+and\s+[Aa]ddress\s+of\s+(?:original\s+)?[Tt]rustee[^:\n]*[:\n]\s*([^\n]{2,80}(?:\n[A-Za-z][^\n]{0,60})?)",
-        r"[Ss]ubstitute\s+[Tt]rustee[:\s]+([^\n,]{3,80}?)(?:,|\n)",
-        r"designation\s+of\s+([A-Z][A-Za-z\s,\.]+?)\s+as\s+(?:[Ff]oreclosure\s+)?[Cc]ommissioner",
-        r"([A-Z][A-Za-z\s,\.&]+?)\s+as\s+[Ff]oreclosure\s+[Cc]ommissioner",
-    ]:
-        m = re.search(pat, text, re.I)
-        if m:
-            candidate = " ".join(m.group(1).split()).strip()
-            cut = re.search(
-                r",?\s+(?:licensed|real\s+estate|broker|dba\s+\w|qualif|\d{3}[\-\.]|an\s+arizona|irvine|glendale|phoenix|scottsdale|tempe|mesa|chandler|gilbert|peoria|surprise|avondale|goodyear|buckeye|ca\s+\d|az\s+\d)",
-                candidate, re.I
-            )
-            if cut:
-                candidate = candidate[:cut.start()].strip().rstrip(",")
+    trustee_block_m = re.search(
+        r"NAME[,\s]+ADDRESS\s*(?:&|AND)\s*TELEPHONE[^:\n]*(?:OF\s+TRUSTEE|TRUSTEE)[^:\n]*[:\n]((?:[^\n]+\n){1,8})",
+        text, re.I
+    )
+    if trustee_block_m:
+        tblock_lines = [l.strip() for l in trustee_block_m.group(1).splitlines() if l.strip()]
+        for tl in tblock_lines:
+            candidate = " ".join(tl.split()).strip()
             bad = {"SALE","OBJECTION","BELIEVE","DEFENSE","ACTION","COURT","FILE",
-                   "LICENSED","BROKER","QUALIFICATIONS","REGULATION","AGENCY"}
+                   "LICENSED","BROKER","QUALIFICATIONS","REGULATION","AGENCY",
+                   "FAX","PHONE","TEL","ONLINE","INFORMATION","AVAILABLE","REQUESTS"}
             if set(candidate.upper().split()) & bad:
                 continue
+            # Skip lines that are clearly addresses or phone numbers
+            if re.match(r"^\d{3,5}\s+\w", candidate) or re.match(r"^\(?\d{3}\)?", candidate):
+                continue
             if len(candidate) > 3:
-                # Deduplicate "Prime Recon LLC Prime Recon LLC" → "Prime Recon LLC"
                 words = candidate.split()
                 half  = len(words) // 2
                 if half > 1 and words[:half] == words[half:]:
@@ -225,28 +223,64 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
                 trustee_name = candidate[:100]
                 break
 
+    # Fallback patterns when the labeled block isn't present
+    if not trustee_name:
+        for pat in [
+            r"[Ss]ubstitute\s+[Tt]rustee[:\s]+([^\n,]{3,80}?)(?:,|\n)",
+            r"designation\s+of\s+([A-Z][A-Za-z\s,\.]+?)\s+as\s+(?:[Ff]oreclosure\s+)?[Cc]ommissioner",
+            r"([A-Z][A-Za-z\s,\.&]+?)\s+as\s+[Ff]oreclosure\s+[Cc]ommissioner",
+        ]:
+            m = re.search(pat, text, re.I)
+            if m:
+                candidate = " ".join(m.group(1).split()).strip()
+                cut = re.search(
+                    r",?\s+(?:licensed|real\s+estate|broker|dba\s+\w|qualif|\d{3}[\-\.]|an\s+arizona|irvine|glendale|phoenix|scottsdale|tempe|mesa|chandler|gilbert|peoria|surprise|avondale|goodyear|buckeye|ca\s+\d|az\s+\d)",
+                    candidate, re.I
+                )
+                if cut:
+                    candidate = candidate[:cut.start()].strip().rstrip(",")
+                bad = {"SALE","OBJECTION","BELIEVE","DEFENSE","ACTION","COURT","FILE",
+                       "LICENSED","BROKER","QUALIFICATIONS","REGULATION","AGENCY"}
+                if set(candidate.upper().split()) & bad:
+                    continue
+                if len(candidate) > 3:
+                    words = candidate.split()
+                    half  = len(words) // 2
+                    if half > 1 and words[:half] == words[half:]:
+                        candidate = " ".join(words[:half])
+                    trustee_name = candidate[:100]
+                    break
+
     if trustee_name:
         rec["trustee_name"] = trustee_name
 
-    phones = re.findall(r"\(?\d{3}\)?[\s\-\.]\d{3}[\s\-\.]\d{4}", text)
+    # Phone: pull from inside the trustee block to avoid picking up beneficiary phones
+    phone_window = text[trustee_block_m.start():trustee_block_m.start()+600] if trustee_block_m else text
+    phones = re.findall(r"\(?\d{3}\)?[\s\-\.]\d{3}[\s\-\.]\d{4}", phone_window)
     if phones:
-        rec["trustee_phone"] = phones[-1].strip()
+        rec["trustee_phone"] = phones[0].strip()
+
+    # ── AUCTION-SITE ADDRESSES — never use as property address ─────────────
+    # Capture addresses that appear in the sale-location sentence so we can
+    # reject them in the property-address block below.
+    _auction_addr_re = re.compile(
+        r"(?:public\s+auction|highest\s+bidder|law\s+(?:office|firm)|PLLC|Esq\.?|sold\s+at)"
+        r"[^\n]{0,250}?(\d{3,5}\s+[^\n,]{5,60},\s*[A-Za-z\s]+,\s*(?:AZ|Arizona)\s+\d{5})",
+        re.I | re.S,
+    )
+    _auction_addrs = {am.group(1).strip().upper() for am in _auction_addr_re.finditer(text)}
 
     # ── PROPERTY ADDRESS ───────────────────────────────────────────────────
     if not rec.get("prop_address"):
         for pat in [
-            # "PURPORTED STREET ADDRESS: 11026 NORTH 28TH DRIVE UNIT 52, PHOENIX, AZ 85029"
-            r"PURPORTED\s+STREET\s+ADDRESS[:\s]+([^\n]+)",
-            # "IDENTIFIABLE LOCATION: ..."
+            # Highest-confidence labeled patterns first
+            r"(?:PURPORTED\s+STREET\s+ADDRESS|[Ss]treet\s+address\s+or\s+identifiable\s+location)[:\s]+([^\n]+)",
             r"IDENTIFIABLE\s+LOCATION[:\s]+([^\n]+)",
-            # "Commonly known as: ..."
             r"[Cc]ommonly\s+known\s+as[:\s]+([^\n]+)",
-            # "The street address ... is purported to be: ADDR"
             r"(?:[Ss]treet\s+address[^:]*)?[Pp]urported\s+to\s+be[:\s]*:?\s*([^\n]{10,100})",
             r"[Ss]treet\s+address[^.]{0,80}?(?:is|be)[:\s]+([^\n]{10,100})",
-            # "Situs:"
             r"[Ss]itus[:\s]+([^\n]+)",
-            # Two-line
+            # Two-line street + city/zip
             r"(\d{2,5}\s+[NSEW]?\.?\s*[\w\s\.#]{4,50}(?:ST|AVE|DR|RD|LN|WAY|BLVD|CT|PL|LOOP|TRL|CIR|PKWY|STREET|AVENUE|ROAD|COURT|LANE|DRIVE)\b[^\n]{0,15})\n\s*([\w\s]+,\s*AZ\s+\d{5})",
         ]:
             m = re.search(pat, text, re.I)
@@ -257,15 +291,16 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
                 raw = raw + ", " + m.group(2).strip()
             raw = re.sub(r"^[Ii]s\s+[Pp]urported\s+[Tt]o\s+[Bb]e[:\s]*", "", raw).strip()
 
-            # SKIP courthouse addresses
             if COURTHOUSE_RE.search(raw):
                 continue
-
-            # SKIP addresses that appear inside a trustee/beneficiary section
-            if _is_in_trustee_section(text, m.start()):
+            # Skip auction / law-firm addresses
+            if raw.upper() in _auction_addrs:
+                continue
+            if trustee_name and re.search(re.escape(trustee_name[:25]), raw, re.I):
                 continue
 
             addr = _parse_addr(raw)
+            # Require a zip — rejects bare "3707 East Southern Avenue" fragments
             if addr and addr.get("zip"):
                 rec["prop_address"] = addr["street"]
                 rec["prop_city"]    = addr["city"]
@@ -286,7 +321,6 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
             if (not _is_company(first_line) and
                     not (trustee_name and first_line.upper() in trustee_name.upper())):
                 for line in lines[1:]:
-                    # Skip lines that are just city/state/zip (no street number)
                     if not re.search(r"^\d", line.strip()):
                         continue
                     addr = _parse_addr(line)
@@ -298,9 +332,33 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
                         break
 
     # ── TRUSTOR / OWNER + 2ND OWNER ───────────────────────────────────────
-    if not rec.get("last_name"):
+    # Always re-extract — don't rely on the recorder API name assignment.
+    # The trustor label block looks like:
+    #   Name and address of original trustor:
+    #   (as shown on the Deed of Trust)      ← skip this line
+    #   Scottsdale, AZ 85257                 ← skip — city/zip only
+    #   MACFIVE INVESTMENTS LLC              ← this is the name
+    #   1610 West Eugie Ave.                 ← this is the address
+    _trustor_name_raw = None
+
+    trustor_block_m = re.search(
+        r"[Nn]ame\s+and\s+[Aa]ddress\s+of\s+(?:original\s+)?[Tt]rustor[:\s]*\n((?:[^\n]+\n){1,10})",
+        text
+    )
+    if trustor_block_m:
+        for tl in [l.strip() for l in trustor_block_m.group(1).splitlines() if l.strip()]:
+            if tl.startswith("(") or tl.startswith("["):
+                continue  # parenthetical note
+            if re.match(r"^[A-Za-z][A-Za-z\s]+,\s*[A-Z]{2}\s+\d{5}", tl):
+                continue  # bare "City, AZ 85000" line
+            if re.match(r"^\d{2,5}\s+", tl):
+                continue  # street address line
+            _trustor_name_raw = tl
+            break
+
+    # Fallback patterns
+    if not _trustor_name_raw:
         for pat in [
-            r"[Nn]ame\s+and\s+[Aa]ddress\s+of\s+(?:original\s+)?[Tt]rustor[:\s]+([^\n]{3,150})",
             r"executed\s+by\s+([A-Z][a-zA-Z\s\.,]+?)\s*,?\s*(?:[Aa]\s+[Ss]ingle|[Aa]\s+[Mm]arried|[Hh]usband|[Ww]ife|as\s+[Tt]rustor|[Tt]rustor\b)",
             r"([A-Z][a-zA-Z\s\.,]{3,60}?)\s+as\s+[Tt]rustor",
             r"[Tt]rustor[:\s]+([A-Z][A-Za-z\s,\.]{3,80}?)(?:\n|,\s*[Aa]\s+[Ss]ingle)",
@@ -309,43 +367,51 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
         ]:
             m = re.search(pat, text, re.I)
             if m:
-                raw       = " ".join(m.group(1).split()).strip().rstrip(",")
-                addr_start = re.search(r",\s*\d{2,5}\s+[NSEW\d]", raw)
-                name_part  = raw[:addr_start.start()].strip().rstrip(",") if addr_start else raw.split(",")[0].strip()
-                rec["owner"] = name_part
-                is_co = _is_company(name_part)
-
-                if is_co:
-                    display = re.sub(
-                        r",?\s*(?:AN?\s+ARIZONA|A\s+\w+\s+)?(?:LIMITED\s+LIABILITY\s+COMPANY|LLC|L\.L\.C\.|CORPORATION|CORP|INC\.?)$",
-                        "", name_part, flags=re.I
-                    ).strip().rstrip(",")
-                    rec["first_name"]   = ""
-                    rec["last_name"]    = display.title()
-                    rec["first_name_2"] = ""
-                    rec["last_name_2"]  = ""
-                else:
-                    rel_pat = r"\s*,?\s*\b(?:husband|wife|married|unmarried|a\s+single|woman|man|trustor|grantor|an?)\b.*$"
-                    # Handle "HUSBAND AND" connector
-                    name_clean = re.sub(r",?\s+(?:HUSBAND|WIFE)\s+AND\s+", " AND ", name_part, flags=re.I)
-                    parts = re.split(r"\s+AND\s+", name_clean, maxsplit=1, flags=re.I)
-
-                    p1_raw = re.sub(rel_pat, "", parts[0], flags=re.I).strip().strip(",")
-                    p1 = _parse_person_name(p1_raw, from_doc=True)
-                    rec["first_name"]   = p1["first"]
-                    rec["last_name"]    = p1["last"]
-                    rec["first_name_2"] = ""
-                    rec["last_name_2"]  = ""
-
-                    if len(parts) > 1:
-                        p2_raw = re.sub(rel_pat, "", parts[1], flags=re.I).strip().strip(",")
-                        if p2_raw:
-                            p2 = _parse_person_name(p2_raw, from_doc=True)
-                            if not p2["last"]:
-                                p2["last"] = p1["last"]
-                            rec["first_name_2"] = p2["first"]
-                            rec["last_name_2"]  = p2["last"]
+                _trustor_name_raw = m.group(1).strip()
                 break
+
+    if _trustor_name_raw:
+        raw = " ".join(_trustor_name_raw.split()).strip().rstrip(",")
+        addr_start = re.search(r",\s*\d{2,5}\s+[NSEW\d]", raw)
+        name_part  = raw[:addr_start.start()].strip().rstrip(",") if addr_start else raw.split(",")[0].strip()
+
+        # Reject if this name matches the trustee (individual trustee contamination)
+        if trustee_name and name_part.upper() in trustee_name.upper():
+            name_part = None
+
+        if name_part:
+            rec["owner"] = name_part
+            is_co = _is_company(name_part)
+
+            if is_co:
+                display = re.sub(
+                    r",?\s*(?:AN?\s+ARIZONA|A\s+\w+\s+)?(?:LIMITED\s+LIABILITY\s+COMPANY|LLC|L\.L\.C\.|CORPORATION|CORP|INC\.?|LIMITED\s+PARTNERSHIP|L\.P\.)$",
+                    "", name_part, flags=re.I
+                ).strip().rstrip(",")
+                rec["first_name"]   = ""
+                rec["last_name"]    = display.title()
+                rec["first_name_2"] = ""
+                rec["last_name_2"]  = ""
+            else:
+                rel_pat = r"\s*,?\s*\b(?:husband|wife|married|unmarried|a\s+single|woman|man|trustor|grantor|an?|not|nor|but\s+as|with\s+right)\b.*$"
+                name_clean = re.sub(r",?\s+(?:HUSBAND|WIFE)\s+AND\s+", " AND ", name_part, flags=re.I)
+                parts = re.split(r"\s+AND\s+", name_clean, maxsplit=1, flags=re.I)
+
+                p1_raw = re.sub(rel_pat, "", parts[0], flags=re.I).strip().strip(",")
+                p1 = _parse_person_name(p1_raw, from_doc=True)
+                rec["first_name"]   = p1["first"]
+                rec["last_name"]    = p1["last"]
+                rec["first_name_2"] = ""
+                rec["last_name_2"]  = ""
+
+                if len(parts) > 1:
+                    p2_raw = re.sub(rel_pat, "", parts[1], flags=re.I).strip().strip(",")
+                    if p2_raw:
+                        p2 = _parse_person_name(p2_raw, from_doc=True)
+                        if not p2["last"]:
+                            p2["last"] = p1["last"]
+                        rec["first_name_2"] = p2["first"]
+                        rec["last_name_2"]  = p2["last"]
 
     # ── APN ────────────────────────────────────────────────────────────────
     if not rec.get("parcel"):
@@ -387,13 +453,11 @@ def _extract_all_fields(rec: dict, text: str) -> dict:
                     break
 
     # ── LOAN AMOUNT ────────────────────────────────────────────────────────
-    # Guard: only skip extraction if we already have a valid numeric amount > 0
     existing_amount = rec.get("amount")
     try:
-        _has_amount = existing_amount is not None and float(str(existing_amount).replace(",","").replace("$","")) > 0
+        _has_amount = existing_amount is not None and float(str(existing_amount).replace(",","").replace("$","").strip()) > 0
     except (ValueError, TypeError):
         _has_amount = False
-
     if not _has_amount:
         for pat in [
             r"ORIGINAL\s+PRINCIPAL\s+BALANCE[:\s]+\$?\s*([\d,]+(?:\.\d{2})?)",
@@ -576,96 +640,56 @@ def _assign_names_smart(rec: dict, names: list) -> dict:
 
     trustee_kw = {"TRUSTEE","RECON","FINANCIAL","MORTGAGE","TITLE","MTC",
                   "COMMISSIONER","OFFICES","LAW","CORPS","CORP","PRIME",
-                  "QUALITY","PIONEER","CLEAR","STATEWIDE"}
+                  "QUALITY","PIONEER","CLEAR","STATEWIDE","PLLC","ESQ"}
     trustee = next(
         (c for c in companies if set(c.upper().split()) & trustee_kw),
         companies[0] if companies else None
     )
     if trustee and not rec.get("trustee_name"):
-        # Deduplicate
         words = trustee.split()
         half  = len(words) // 2
         if half > 1 and words[:half] == words[half:]:
             trustee = " ".join(words[:half])
         rec["trustee_name"] = trustee
 
-    if persons:
-        p1_raw    = persons[0]
-        rel_pat   = r"\s*,?\s*\b(?:HUSBAND|WIFE|MARRIED|UNMARRIED|A\s+SINGLE|WOMAN|MAN)\b.*$"
-        name_clean = re.sub(r",?\s+(?:HUSBAND|WIFE)\s+AND\s+", " AND ", p1_raw, flags=re.I)
-        and_parts  = re.split(r"\s+AND\s+", name_clean, maxsplit=1, flags=re.I)
+    # Only fill name fields that OCR left blank
+    if not rec.get("last_name"):
+        # Remove any person whose name matches the trustee (individual trustee scenario:
+        # e.g. "Larry O. Folks" listed as a person but he is the trustee)
+        trustee_str = (rec.get("trustee_name") or "").upper()
+        safe_persons = [p for p in persons if p.upper() not in trustee_str] or persons
 
-        p1 = _parse_person_name(re.sub(rel_pat, "", and_parts[0], flags=re.I).strip())
-        rec["first_name"]   = p1["first"]
-        rec["last_name"]    = p1["last"]
-        rec["first_name_2"] = ""
-        rec["last_name_2"]  = ""
-        rec["owner"]        = p1_raw
+        if safe_persons:
+            p1_raw    = safe_persons[0]
+            rel_pat   = r"\s*,?\s*\b(?:HUSBAND|WIFE|MARRIED|UNMARRIED|A\s+SINGLE|WOMAN|MAN)\b.*$"
+            name_clean = re.sub(r",?\s+(?:HUSBAND|WIFE)\s+AND\s+", " AND ", p1_raw, flags=re.I)
+            and_parts  = re.split(r"\s+AND\s+", name_clean, maxsplit=1, flags=re.I)
 
-        if len(and_parts) > 1:
-            p2_raw = re.sub(rel_pat, "", and_parts[1], flags=re.I).strip().strip(",")
-            p2 = _parse_person_name(p2_raw)
-            if not p2["last"]:
-                p2["last"] = p1["last"]
-            rec["first_name_2"] = p2["first"]
-            rec["last_name_2"]  = p2["last"]
-        elif len(persons) > 1:
-            p2 = _parse_person_name(re.sub(rel_pat, "", persons[1], flags=re.I).strip())
-            rec["first_name_2"] = p2["first"]
-            rec["last_name_2"]  = p2["last"]
-    elif companies:
-        rec["owner"]      = companies[0]
-        rec["first_name"] = ""
-        rec["last_name"]  = companies[0].title()
+            p1 = _parse_person_name(re.sub(rel_pat, "", and_parts[0], flags=re.I).strip())
+            rec["first_name"]   = p1["first"]
+            rec["last_name"]    = p1["last"]
+            rec["first_name_2"] = ""
+            rec["last_name_2"]  = ""
+            rec["owner"]        = p1_raw
+
+            if len(and_parts) > 1:
+                p2_raw = re.sub(rel_pat, "", and_parts[1], flags=re.I).strip().strip(",")
+                p2 = _parse_person_name(p2_raw)
+                if not p2["last"]:
+                    p2["last"] = p1["last"]
+                rec["first_name_2"] = p2["first"]
+                rec["last_name_2"]  = p2["last"]
+            elif len(safe_persons) > 1:
+                p2 = _parse_person_name(re.sub(rel_pat, "", safe_persons[1], flags=re.I).strip())
+                rec["first_name_2"] = p2["first"]
+                rec["last_name_2"]  = p2["last"]
+        elif companies:
+            rec["owner"]      = companies[0]
+            rec["first_name"] = ""
+            rec["last_name"]  = companies[0].title()
 
     lenders = [c for c in companies if c != trustee]
     rec["grantee"] = lenders[0] if lenders else ""
-    return rec
-
-
-def _is_in_trustee_section(text: str, match_pos: int) -> bool:
-    """
-    Returns True if match_pos falls within a Trustee/Beneficiary address block.
-    Looks back up to 300 chars for trustee/beneficiary keywords with no
-    intervening trustor/property keyword to reset context.
-    """
-    window = text[max(0, match_pos - 300):match_pos].upper()
-    trustee_kw = re.search(
-        r"\b(?:TRUSTEE|BENEFICIARY|SUBSTITUTE\s+TRUSTEE|NAME\s+AND\s+ADDRESS\s+OF\s+(?:ORIGINAL\s+)?TRUSTEE)\b",
-        window,
-    )
-    if not trustee_kw:
-        return False
-    # If a property/trustor keyword appears AFTER the trustee keyword in that window, safe
-    reset_kw = re.search(
-        r"\b(?:TRUSTOR|GRANTOR|BORROWER|PURPORTED|PROPERTY\s+ADDRESS|SITUS|COMMONLY\s+KNOWN)\b",
-        window[trustee_kw.end():],
-    )
-    return reset_kw is None
-
-
-def _clear_name_if_trustee(rec: dict) -> dict:
-    """
-    If the recorder API assigned the trustee company/person as the owner name,
-    wipe first/last so the OCR trustor extraction can fill it correctly.
-    This happens when the API names list contains only the trustee, or when
-    an individual trustee/commissioner gets classified as a person.
-    """
-    trustee = (rec.get("trustee_name") or "").upper().strip()
-    if not trustee:
-        return rec
-    last  = (rec.get("last_name")  or "").upper().strip()
-    first = (rec.get("first_name") or "").upper().strip()
-    full  = f"{last} {first}".strip()
-    # Clear if the assigned person name appears verbatim inside the trustee name,
-    # or if any COMPANY_WORDS token leaked into last_name
-    if (full and full in trustee) or (last and _is_company(last)):
-        rec["first_name"]   = ""
-        rec["last_name"]    = ""
-        rec["first_name_2"] = ""
-        rec["last_name_2"]  = ""
-        rec["owner"]        = ""
-        log.debug(f"Cleared trustee-contaminated name '{full}' for {rec.get('doc_num')}")
     return rec
 
 
