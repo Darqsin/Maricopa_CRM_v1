@@ -3,7 +3,7 @@ name: Maricopa Lead Scraper
 on:
   # 6 PM MST (Phoenix) = 01:00 UTC next day (no DST — Phoenix stays UTC-7 year-round)
   schedule:
-    - cron: "0 1 * * 2-6"   # Tue–Sat UTC = Mon–Fri 6 PM Phoenix
+    - cron: "0 1 * * 2-6"  # Tue–Sat UTC = Mon–Fri 6 PM Phoenix
 
   workflow_dispatch:
     inputs:
@@ -76,39 +76,65 @@ jobs:
           mkdir -p data dashboard scraper raw_png \
             grouped_output/renamed grouped_output/pdfs parsed_output
 
-      - name: Run lead scraper
+      # ── Step 1: Clerk scrape → raw records (no enrichment yet) ──────────────
+      # fetch.py now calls clerk_scraper only; enrichment happens after PNGs are ready.
+      # If fetch.py still calls enrich_records() internally, the PNG steps below
+      # will re-enrich from the saved raw JSON — see fetch.py notes.
+      - name: Scrape clerk — fetch raw NTS records
         env:
-          # If manually triggered with dates, use those; otherwise use lookback
-          START_DATE: ${{ github.event.inputs.start_date }}
-          END_DATE:   ${{ github.event.inputs.end_date }}
-          LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || vars.LOOKBACK_DAYS || '7' }}
+          START_DATE:       ${{ github.event.inputs.start_date }}
+          END_DATE:         ${{ github.event.inputs.end_date }}
+          LOOKBACK_DAYS:    ${{ github.event.inputs.lookback_days || vars.LOOKBACK_DAYS || '7' }}
           PYTHONUNBUFFERED: "1"
+          # Signal to fetch.py that it should SKIP enrichment on this pass
+          # (set to "1" so fetch.py can check os.getenv("SCRAPE_ONLY"))
+          SCRAPE_ONLY:      "1"
         run: python scraper/fetch.py
 
+      # ── Step 2: Download document PNGs ──────────────────────────────────────
       - name: Download NTS document PNGs
         run: python scraper/download_pngs.py
 
+      # ── Step 3: Group PNGs into per-document PDFs ────────────────────────────
       - name: Group PNGs into PDFs
         run: python maricopa_nts_png_v01.py
 
+      # ── Step 4: Parse PDFs → Excel/CSV (updates parsed_output/) ─────────────
       - name: Parse NTS PDFs to Excel and CSV
         run: python maricopa_nts_parser_v01.py
 
+      # ── Step 5: Enrich + export  ─────────────────────────────────────────────
+      # Run fetch.py again WITHOUT SCRAPE_ONLY so it: loads the raw records,
+      # runs OCR/enrichment (PNGs now exist), calls exporter, writes all outputs.
+      # Alternatively — if you refactor fetch.py to accept --enrich-only — use
+      # that flag here instead of the env-var pattern.
+      - name: Enrich records and export GHL CSV
+        env:
+          PYTHONUNBUFFERED: "1"
+          ENRICH_ONLY:      "1"
+        run: python scraper/fetch.py
+
+      # ── Step 6: Commit all outputs ───────────────────────────────────────────
       - name: Commit all outputs
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add data/records.json dashboard/records.json || true
-          git add data/ghl_export.csv || true
+          git add data/records.json          || true
+          git add dashboard/records.json     || true
+          git add data/ghl_export.csv        || true
           git add parsed_output/nts_data.xlsx parsed_output/nts_data.csv || true
-          git add grouped_output/pdfs/ || true
-          git add scraper/scraper.log || true
+          git add grouped_output/pdfs/       || true
+          git add scraper/scraper.log        || true
+          # Also track the enricher/exporter themselves so CI always runs latest
+          git add scraper/enricher.py scraper/exporter.py || true
 
           CHANGES=$(git diff --cached --name-only | wc -l)
           if [ "$CHANGES" -gt "0" ]; then
             TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
-            TOTAL=$(python -c "import json; d=json.load(open('data/records.json')); print(d.get('total',0))" 2>/dev/null || echo "?")
+            TOTAL=$(python -c \
+              "import json; d=json.load(open('data/records.json')); print(d.get('total',0))" \
+              2>/dev/null || echo "?")
             git commit -m "🏠 Leads update: ${TOTAL} records — ${TIMESTAMP}"
             git push
           else
