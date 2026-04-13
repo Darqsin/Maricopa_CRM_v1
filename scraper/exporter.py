@@ -51,13 +51,19 @@ def export_ghl_csv(records: list[dict], path: Path) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Legacy column names that must never appear in output
+    _BANNED_COLUMNS = {"lead_type", "Lead Type", "document_type", "Document Type"}
+
     rows_written = 0
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=GHL_COLUMNS, extrasaction="ignore")
         writer.writeheader()
         for rec in records:
             try:
-                writer.writerow(_rec_to_row(rec))
+                row = _rec_to_row(rec)
+                # Belt-and-suspenders: strip any banned keys before writing
+                row = {k: v for k, v in row.items() if k not in _BANNED_COLUMNS}
+                writer.writerow(row)
                 rows_written += 1
             except Exception as exc:
                 log.warning(f"Row error {rec.get('doc_num')}: {exc}")
