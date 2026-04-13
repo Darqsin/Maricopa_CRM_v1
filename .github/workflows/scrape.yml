@@ -1,8 +1,9 @@
 name: Maricopa Lead Scraper
 
 on:
+  # 6 PM MST (Phoenix) = 01:00 UTC next day (no DST — Phoenix stays UTC-7 year-round)
   schedule:
-    - cron: "0 7 * * *"
+    - cron: "0 1 * * 2-6"   # Tue–Sat UTC = Mon–Fri 6 PM Phoenix
 
   workflow_dispatch:
     inputs:
