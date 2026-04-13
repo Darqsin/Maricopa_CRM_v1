@@ -1,12 +1,12 @@
 {
-  "fetched_at": "2026-04-13T20:38:24.172553Z",
+  "fetched_at": "2026-04-13T20:49:14.350720Z",
   "source": "Maricopa County Recorder \u2014 Notice of Trustee Sale",
   "date_range": {
     "start": "2026-04-12",
     "end": "2026-04-13"
   },
-  "total": 15,
-  "with_address": 15,
+  "total": 16,
+  "with_address": 16,
   "records": [
     {
       "doc_num": "20260217218",
@@ -510,6 +510,42 @@
       ],
       "score": 58,
       "deed_of_trust": "20180220326"
+    },
+    {
+      "doc_num": "20260218221",
+      "doc_type": "N/TR SALE",
+      "filed": "2026-04-13",
+      "cat": "NOTS",
+      "cat_label": "Notice of Trustee Sale",
+      "lead_key": "NS",
+      "owner": "STEPHANIE F SALAZAR AND MACENAS T WALTON",
+      "grantee": "",
+      "amount": 438903.0,
+      "legal": "",
+      "prop_address": "17492 W Polaris Drive",
+      "prop_city": "Goodyear",
+      "prop_state": "AZ",
+      "prop_zip": "85338",
+      "mail_address": null,
+      "mail_city": null,
+      "mail_state": null,
+      "mail_zip": null,
+      "parcel": "400-78-288",
+      "first_name": "Stephanie F",
+      "last_name": "Salazar",
+      "first_name_2": "Macenas T",
+      "last_name_2": "Walton",
+      "trustee_name": null,
+      "trustee_phone": "949-252-8300",
+      "auction_date": "2026-07-16",
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260218221",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260218221",
+      "flags": [
+        "TRUSTEE_SALE"
+      ],
+      "score": 58,
+      "raw_trustor": "STEPHANIE F SALAZAR AND MACENAS T WALTON, WIFE AND HUSBAND",
+      "deed_of_trust": "20230331882"
     },
     {
       "doc_num": "20260217097",
