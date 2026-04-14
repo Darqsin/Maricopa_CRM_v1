@@ -84,7 +84,7 @@ jobs:
         env:
           START_DATE:       ${{ github.event.inputs.start_date }}
           END_DATE:         ${{ github.event.inputs.end_date }}
-          LOOKBACK_DAYS:    ${{ github.event.inputs.lookback_days || vars.LOOKBACK_DAYS || '7' }}
+          LOOKBACK_DAYS:    ${{ github.event.inputs.lookback_days || vars.LOOKBACK_DAYS || '3' }}
           PYTHONUNBUFFERED: "1"
           # Signal to fetch.py that it should SKIP enrichment on this pass
           # (set to "1" so fetch.py can check os.getenv("SCRAPE_ONLY"))
