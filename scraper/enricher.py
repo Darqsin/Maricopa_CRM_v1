@@ -317,6 +317,38 @@ def _is_trustee_like(name: str) -> bool:
     return False
 
 
+# ── OCR label / boilerplate junk guards ──────────────────────────────────────
+
+_TRUSTOR_JUNK_RE = re.compile(
+    r"^(?:"
+    r"name\s+and\s+address"            # section label text
+    r"|address\s+of\s+the\s+beneficiary"
+    r"|as\s+shown\s+on\s+the\s+deed"
+    r"|beneficiary"
+    r"|name\s+address"
+    r"|name\b"                          # bare "Name" OCR label
+    r"|\{[^}]*\}"                       # curly-brace boilerplate e.g. "{As Shown On...}"
+    r"|page\s+\d+"
+    r"|scanner"
+    r")",
+    re.I,
+)
+
+
+def _is_junk_name(s: str) -> bool:
+    """Return True when *s* looks like OCR label text or boilerplate, not a real name."""
+    s = s.strip()
+    if not s or len(s) < 2:
+        return True
+    if _TRUSTOR_JUNK_RE.match(s):
+        return True
+    if "{" in s or "}" in s:         # curly braces anywhere = boilerplate
+        return True
+    if re.match(r"^[\.\,\;\:\!\?]+$", s):   # pure punctuation
+        return True
+    return False
+
+
 def _extract_raw_trustee(text: str) -> str:
     """
     Locate the NAME, ADDRESS & TELEPHONE NUMBER OF TRUSTEE block
@@ -334,6 +366,8 @@ def _extract_raw_trustee(text: str) -> str:
         "SALE","OBJECTION","BELIEVE","DEFENSE","ACTION","COURT","FILE",
         "LICENSED","BROKER","QUALIFICATIONS","REGULATION","AGENCY",
         "FAX","SALES","ONLINE","INFORMATION","AVAILABLE","REQUESTS","WEBSITE",
+        # OCR label artifacts seen in Maricopa docs
+        "PHONE","NUMBER","UNOFFICIAL","DOCUMENT","REGEN",
     }
     for line in block_m.group(1).splitlines():
         line = line.strip()
@@ -347,9 +381,7 @@ def _extract_raw_trustee(text: str) -> str:
             continue   # street address or phone
         if re.match(r"^[A-Za-z][A-Za-z\s]+,\s*[A-Z]{2}\s+\d{5}", line):
             continue   # bare city/state/zip
-        # Reject known trustee office addresses
-        if _is_trustee_office_address(line):
-            continue
+        line = re.sub(r"^[\|\[\]\{\}]+\s*", "", line).strip()   # leading pipe/bracket artifact
         line = re.sub(r",?\s+a\s+member\s+of\s+the\s+State\s+Bar.*$", "", line, flags=re.I).strip()
         line = re.sub(r",?\s+licensed\s+real\s+estate\s+broker.*$",    "", line, flags=re.I).strip()
         if len(line) > 3:
@@ -404,6 +436,8 @@ def _extract_raw_trustor(text: str) -> str:
         for idx, tl in enumerate(tlines):
             if tl.startswith("(") or tl.startswith("["):
                 continue
+            if _is_junk_name(tl):
+                continue
             if re.match(r"^[A-Za-z][A-Za-z\s]+,\s*[A-Z]{2}\s+\d{5}", tl):
                 continue   # bare city/state/zip
             if re.match(r"^\d{2,5}\s+", tl):
@@ -430,7 +464,9 @@ def _extract_raw_trustor(text: str) -> str:
     ]:
         m = re.search(pat, text, re.I)
         if m:
-            return m.group(1).strip()
+            candidate = m.group(1).strip()
+            if not _is_junk_name(candidate):
+                return candidate
     return ""
 
 
@@ -483,6 +519,8 @@ def _set_owner_from_trustor(rec: dict, raw_trustor: str, known_trustee: str = ""
         return rec
     if _is_trustee_like(name_part):
         return rec
+    if _is_junk_name(name_part):
+        return rec
     if re.match(r"(?:in\s+favor\s+of|in\s+re\b|scanner|page\s+\d)", name_part, re.I):
         return rec
 
@@ -505,6 +543,11 @@ def _set_owner_from_trustor(rec: dict, raw_trustor: str, known_trustee: str = ""
     name_clean = re.sub(
         r",?\s+(?:HUSBAND|WIFE)\s+AND\s+", " AND ", name_part, flags=re.I
     )
+    # Catch run-together "and" e.g. "Tom Arandaand April N." (lowercase 'and' glued to name,
+    # followed by a space then the second name). Only fires when 'and' is preceded by a
+    # lowercase letter and followed by whitespace — safe against Amanda/Orlando/Fernando etc.
+    name_clean = re.sub(r"(?<=[a-z])and(?=\s)", " AND ", name_clean, flags=re.I)
+    name_clean = re.sub(r"\s{2,}", " ", name_clean)   # collapse any double-space artifact
     parts = re.split(r"\s+AND\s+", name_clean, maxsplit=1, flags=re.I)
     p1_raw = _REL_PAT.sub("", parts[0]).strip().strip(",")
     p1 = _parse_person_name(p1_raw, from_doc=True)
@@ -540,6 +583,8 @@ def _owner_is_suspect(rec: dict) -> bool:
     if _is_trustee_like(owner or last):
         return True
     if re.match(r"(?:in\s+favor\s+of|in\s+re\b|scanner|page\s+\d|---)", last, re.I):
+        return True
+    if _is_junk_name(last) or _is_junk_name(first):
         return True
     return False
 
@@ -648,6 +693,7 @@ def _extract_fields_standard(rec: dict, text: str) -> dict:
                 bad = {
                     "SALE","OBJECTION","BELIEVE","DEFENSE","ACTION","COURT","FILE",
                     "LICENSED","BROKER","QUALIFICATIONS","REGULATION","AGENCY",
+                    "PHONE","NUMBER","UNOFFICIAL","DOCUMENT",
                 }
                 if set(candidate.upper().split()) & bad:
                     continue
@@ -870,14 +916,23 @@ def _parse_addr(raw: str) -> Optional[dict]:
     raw = " ".join(raw.split()).strip()
     raw = re.sub(r"^[Ii]s\s+[Pp]urported\s+[Tt]o\s+[Bb]e[:\s]*", "", raw).strip()
     raw = re.sub(r"^[Tt]he\s+street\s+address[^:]*is[:\s]*", "", raw, flags=re.I).strip()
+    # Strip leading/trailing pipe artifacts and brackets
     raw = re.sub(r"^[\|\[\]]+\s*", "", raw).strip()
     raw = re.sub(r"[\[\]]", "", raw).strip()
+    raw = re.sub(r"\s*\|+\s*$", "", raw).strip()      # trailing pipe e.g. "123 Main St |"
+    # Strip leading 5-digit scanner/page-number prefix: "08093 6302 E. McKellips" → "6302 E. McKellips"
+    raw = re.sub(r"^\d{5}\s+(?=\d{3,5}\s+[A-Za-z])", "", raw).strip()
+    # Strip 1-3 digit page prefix before a real street number
     raw = re.sub(r"^\d{1,3}\s+(?:[A-Za-z][\w\s\.]{0,50}?)(?=\d{3,5}\s+[NSEW])", "", raw).strip()
     raw = re.sub(r"^\d{1,3}\s+(?=\d{2,5}\s+[NSEW])", "", raw).strip()
 
     # Hard-block trustee office and courthouse addresses
     if _is_trustee_office_address(raw):
         return None
+
+    def _clean_street(s: str) -> str:
+        """Strip trailing pipe/bracket artifacts from a parsed street string."""
+        return re.sub(r"\s*[\|\[\]]+\s*$", "", s).strip()
 
     # "street, city, [state] zip"
     m = re.match(
@@ -891,7 +946,7 @@ def _parse_addr(raw: str) -> Optional[dict]:
         zip_     = m.group(4).strip()
         city     = _fix_city(city_raw)
         if city and not _is_trustee_office_address(city):
-            return {"street": street.title(), "city": city.title(), "state": state, "zip": zip_}
+            return {"street": _clean_street(street.title()), "city": city.title(), "state": state, "zip": zip_}
 
     # No comma before city: "123 Main St City, AZ 85001"
     m2 = re.match(r"^(\d+\s+.+?),?\s*([A-Za-z]{2,})\s+(\d{5})$", raw, re.I)
@@ -901,9 +956,9 @@ def _parse_addr(raw: str) -> Optional[dict]:
         zip_   = m2.group(3)
         street, city = _split_street_city(pre)
         if city and not _is_trustee_office_address(city):
-            return {"street": street.title(), "city": city.title(), "state": state, "zip": zip_}
+            return {"street": _clean_street(street.title()), "city": city.title(), "state": state, "zip": zip_}
         if pre and not _is_trustee_office_address(pre):
-            return {"street": pre.title(), "city": "", "state": state, "zip": zip_}
+            return {"street": _clean_street(pre.title()), "city": "", "state": state, "zip": zip_}
 
     # Fallback
     zip_m = re.search(r"(\d{5})", raw)
@@ -918,7 +973,7 @@ def _parse_addr(raw: str) -> Optional[dict]:
             city   = _fix_city(parts[-1].strip())
             if city and not _is_trustee_office_address(city):
                 return {
-                    "street": street.title(),
+                    "street": _clean_street(street.title()),
                     "city":   city.title(),
                     "state":  state,
                     "zip":    zip_m.group(1),
@@ -958,9 +1013,13 @@ def _split_street_city(text: str) -> tuple:
 
 def _fix_city(city: str) -> str:
     tokens = city.upper().split()
+    # Strip street-type word that bled in from address
     for i, tok in enumerate(tokens):
         if tok.rstrip(".") in STREET_TYPES and i < len(tokens) - 1:
             return " ".join(tokens[i+1:]).title()
+    # Strip leading unit number that bled in: "236 Scottsdale" → "Scottsdale"
+    if tokens and re.match(r"^\d+$", tokens[0]) and len(tokens) > 1:
+        return " ".join(tokens[1:]).title()
     return city
 
 
@@ -981,17 +1040,27 @@ def _parse_person_name(raw: str, from_doc: bool = False) -> dict:
     ).strip().strip(",").strip()
     if not raw:
         return {"first": "", "last": ""}
+
+    # Strip trailing generational suffixes so they don't become last name
+    raw = re.sub(r",?\s+\b(Jr\.?|Sr\.?|II|III|IV|V)\s*$", "", raw, flags=re.I).strip()
+
     tokens = raw.split()
     if not tokens:
         return {"first": "", "last": ""}
     if len(tokens) == 1:
         return {"first": "", "last": tokens[0].title()}
-    if raw[0].isupper() and not raw.isupper():
+
+    # Mixed-case with real lowercase → natural First Last order (OCR doc text)
+    has_lower = any(c.islower() for c in raw)
+    if has_lower and from_doc:
         return {"first": " ".join(tokens[:-1]).title(), "last": tokens[-1].title()}
-    if from_doc:
-        return {"first": " ".join(tokens[:-1]).title(), "last": tokens[-1].title()}
-    else:
+
+    # API source (from_doc=False): always LAST FIRST [MIDDLE] order
+    if not from_doc:
         return {"last": tokens[0].title(), "first": " ".join(tokens[1:]).title()}
+
+    # from_doc=True, ALL-CAPS: natural order FIRST [MIDDLE] LAST
+    return {"first": " ".join(tokens[:-1]).title(), "last": tokens[-1].title()}
 
 
 def _assign_names_smart(rec: dict, names: list) -> dict:
