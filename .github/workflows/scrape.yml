@@ -18,7 +18,7 @@ on:
       lookback_days:
         description: "Days to look back (used only if start_date is blank)"
         required: false
-        default: "7"
+        default: "3"
 
 permissions:
   contents: write
