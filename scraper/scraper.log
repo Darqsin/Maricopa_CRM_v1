@@ -3337,3 +3337,24 @@ Call log:
 2026-09-23 05:43:47,590 [INFO] fetch — Saved → data/records.json
 2026-09-23 05:43:47,590 [INFO] exporter — GHL CSV → data/ghl_export.csv (41 rows)
 2026-09-23 05:43:47,591 [INFO] fetch — Done | total=41 | with_addr=0 | top_score=42
+2026-09-24 05:58:50,674 [INFO] fetch — Using lookback=1d: 2026-09-23 → 2026-09-24
+2026-09-24 05:58:50,674 [INFO] fetch — [SCRAPE_ONLY] 2026-09-23 → 2026-09-24
+2026-09-24 05:58:50,836 [INFO] clerk_scraper — Session warmed up via portal
+2026-09-24 05:58:50,837 [INFO] clerk_scraper — Scraping NS (Notice of Trustee Sale)
+2026-09-24 05:58:51,304 [INFO] clerk_scraper —   Page 1: 18 rows (total=18)
+2026-09-24 05:58:51,319 [INFO] clerk_scraper —   → 18 records for NS
+2026-09-24 05:58:51,819 [INFO] clerk_scraper — Total records: 18
+2026-09-24 05:58:51,819 [INFO] fetch — Clerk scrape: 18 raw records
+2026-09-24 05:58:51,820 [INFO] fetch — Raw records saved → data/records_raw.json
+2026-09-24 05:59:29,985 [INFO] fetch — [ENRICH_ONLY] loading raw records from disk
+2026-09-24 05:59:29,985 [INFO] fetch — Loaded 18 raw records for enrichment
+2026-09-24 05:59:30,035 [INFO] enricher — OCR ready
+2026-09-24 05:59:30,035 [INFO] enricher — Enriching 18 records...
+2026-09-24 05:59:44,110 [INFO] enricher — Done: 0/18 addresses (0%)
+2026-09-24 05:59:44,110 [INFO] fetch — Enrichment complete: 18 records
+2026-09-24 05:59:44,111 [INFO] exporter — JSON saved → dashboard/records.json (18 records)
+2026-09-24 05:59:44,112 [INFO] fetch — Saved → dashboard/records.json
+2026-09-24 05:59:44,112 [INFO] exporter — JSON saved → data/records.json (18 records)
+2026-09-24 05:59:44,112 [INFO] fetch — Saved → data/records.json
+2026-09-24 05:59:44,113 [INFO] exporter — GHL CSV → data/ghl_export.csv (18 rows)
+2026-09-24 05:59:44,113 [INFO] fetch — Done | total=18 | with_addr=0 | top_score=42
