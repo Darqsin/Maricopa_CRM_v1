@@ -1,17 +1,17 @@
 {
-  "fetched_at": "2026-10-16T05:40:33.419175Z",
+  "fetched_at": "2026-10-17T05:26:26.305874Z",
   "source": "Maricopa County Recorder \u2014 Notice of Trustee Sale",
   "date_range": {
-    "start": "2026-10-15",
-    "end": "2026-10-16"
+    "start": "2026-10-16",
+    "end": "2026-10-17"
   },
   "total": 12,
   "with_address": 0,
   "records": [
     {
-      "doc_num": "20260597202",
+      "doc_num": "20260600652",
       "doc_type": "N/TR SALE",
-      "filed": "2026-10-15",
+      "filed": "2026-10-16",
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
@@ -35,8 +35,8 @@
       "trustee_name": null,
       "trustee_phone": null,
       "auction_date": null,
-      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260597202",
-      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260597202",
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260600652",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260600652",
       "flags": [
         "TRUSTEE_SALE",
         "NO_ADDRESS"
@@ -44,9 +44,9 @@
       "score": 42
     },
     {
-      "doc_num": "20260597332",
+      "doc_num": "20260600672",
       "doc_type": "N/TR SALE",
-      "filed": "2026-10-15",
+      "filed": "2026-10-16",
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
@@ -70,8 +70,8 @@
       "trustee_name": null,
       "trustee_phone": null,
       "auction_date": null,
-      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260597332",
-      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260597332",
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260600672",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260600672",
       "flags": [
         "TRUSTEE_SALE",
         "NO_ADDRESS"
@@ -79,9 +79,9 @@
       "score": 42
     },
     {
-      "doc_num": "20260597651",
+      "doc_num": "20260600730",
       "doc_type": "N/TR SALE",
-      "filed": "2026-10-15",
+      "filed": "2026-10-16",
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
@@ -105,8 +105,8 @@
       "trustee_name": null,
       "trustee_phone": null,
       "auction_date": null,
-      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260597651",
-      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260597651",
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260600730",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260600730",
       "flags": [
         "TRUSTEE_SALE",
         "NO_ADDRESS"
@@ -114,9 +114,9 @@
       "score": 42
     },
     {
-      "doc_num": "20260599124",
+      "doc_num": "20260601961",
       "doc_type": "N/TR SALE",
-      "filed": "2026-10-15",
+      "filed": "2026-10-16",
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
@@ -140,8 +140,8 @@
       "trustee_name": null,
       "trustee_phone": null,
       "auction_date": null,
-      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260599124",
-      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260599124",
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260601961",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260601961",
       "flags": [
         "TRUSTEE_SALE",
         "NO_ADDRESS"
@@ -149,9 +149,9 @@
       "score": 42
     },
     {
-      "doc_num": "20260599475",
+      "doc_num": "20260602439",
       "doc_type": "N/TR SALE",
-      "filed": "2026-10-15",
+      "filed": "2026-10-16",
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
@@ -175,8 +175,8 @@
       "trustee_name": null,
       "trustee_phone": null,
       "auction_date": null,
-      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260599475",
-      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260599475",
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260602439",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260602439",
       "flags": [
         "TRUSTEE_SALE",
         "NO_ADDRESS"
@@ -184,9 +184,9 @@
       "score": 42
     },
     {
-      "doc_num": "20260599488",
+      "doc_num": "20260602556",
       "doc_type": "N/TR SALE",
-      "filed": "2026-10-15",
+      "filed": "2026-10-16",
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
@@ -210,8 +210,8 @@
       "trustee_name": null,
       "trustee_phone": null,
       "auction_date": null,
-      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260599488",
-      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260599488",
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260602556",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260602556",
       "flags": [
         "TRUSTEE_SALE",
         "NO_ADDRESS"
@@ -219,9 +219,9 @@
       "score": 42
     },
     {
-      "doc_num": "20260599585",
+      "doc_num": "20260602598",
       "doc_type": "N/TR SALE",
-      "filed": "2026-10-15",
+      "filed": "2026-10-16",
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
@@ -245,8 +245,8 @@
       "trustee_name": null,
       "trustee_phone": null,
       "auction_date": null,
-      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260599585",
-      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260599585",
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260602598",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260602598",
       "flags": [
         "TRUSTEE_SALE",
         "NO_ADDRESS"
@@ -254,9 +254,9 @@
       "score": 42
     },
     {
-      "doc_num": "20260599897",
+      "doc_num": "20260602613",
       "doc_type": "N/TR SALE",
-      "filed": "2026-10-15",
+      "filed": "2026-10-16",
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
@@ -280,8 +280,8 @@
       "trustee_name": null,
       "trustee_phone": null,
       "auction_date": null,
-      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260599897",
-      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260599897",
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260602613",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260602613",
       "flags": [
         "TRUSTEE_SALE",
         "NO_ADDRESS"
@@ -289,9 +289,9 @@
       "score": 42
     },
     {
-      "doc_num": "20260599913",
+      "doc_num": "20260602629",
       "doc_type": "N/TR SALE",
-      "filed": "2026-10-15",
+      "filed": "2026-10-16",
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
@@ -315,8 +315,8 @@
       "trustee_name": null,
       "trustee_phone": null,
       "auction_date": null,
-      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260599913",
-      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260599913",
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260602629",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260602629",
       "flags": [
         "TRUSTEE_SALE",
         "NO_ADDRESS"
@@ -324,9 +324,9 @@
       "score": 42
     },
     {
-      "doc_num": "20260599915",
+      "doc_num": "20260602654",
       "doc_type": "N/TR SALE",
-      "filed": "2026-10-15",
+      "filed": "2026-10-16",
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
@@ -350,8 +350,8 @@
       "trustee_name": null,
       "trustee_phone": null,
       "auction_date": null,
-      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260599915",
-      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260599915",
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260602654",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260602654",
       "flags": [
         "TRUSTEE_SALE",
         "NO_ADDRESS"
@@ -359,9 +359,9 @@
       "score": 42
     },
     {
-      "doc_num": "20260600083",
+      "doc_num": "20260602762",
       "doc_type": "N/TR SALE",
-      "filed": "2026-10-15",
+      "filed": "2026-10-16",
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
@@ -385,8 +385,8 @@
       "trustee_name": null,
       "trustee_phone": null,
       "auction_date": null,
-      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260600083",
-      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260600083",
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260602762",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260602762",
       "flags": [
         "TRUSTEE_SALE",
         "NO_ADDRESS"
@@ -394,9 +394,9 @@
       "score": 42
     },
     {
-      "doc_num": "20260600085",
+      "doc_num": "20260603238",
       "doc_type": "N/TR SALE",
-      "filed": "2026-10-15",
+      "filed": "2026-10-16",
       "cat": "NOTS",
       "cat_label": "Notice of Trustee Sale",
       "lead_key": "NS",
@@ -420,8 +420,8 @@
       "trustee_name": null,
       "trustee_phone": null,
       "auction_date": null,
-      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260600085",
-      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260600085",
+      "pdf_url": "https://recorder.maricopa.gov/recording/document-preview.html?recNum=20260603238",
+      "clerk_url": "https://recorder.maricopa.gov/recording/document-details?id=20260603238",
       "flags": [
         "TRUSTEE_SALE",
         "NO_ADDRESS"
